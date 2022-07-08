@@ -2,8 +2,8 @@ package chessgo_test
 
 import (
 	"fmt"
-	"math"
 	"mp/chessgo"
+	"reflect"
 	"testing"
 )
 
@@ -19,31 +19,32 @@ type StubBoard struct {
 	squares []byte
 }
 
-func TestSourcesForDest(t *testing.T) {
+func TestGameMove(t *testing.T) {
 	testCases := []struct {
-		board    StubBoard
-		destAddr string
-		want     string
+		board StubBoard
+		move  string
+		want  StubBoard
 	}{
 		{
-			board:    StubBoard{squares: []byte("P   ")},
-			destAddr: "a2",
-			want:     "a1",
+			board: StubBoard{squares: []byte("P   ")},
+			move:  "a2",
+			want:  StubBoard{squares: []byte("  P ")},
 		},
 		{
-			board:    StubBoard{squares: []byte(" P  ")},
-			destAddr: "b2",
-			want:     "b1",
+			board: StubBoard{squares: []byte(" P   ")},
+			move:  "a2",
+			want:  StubBoard{squares: []byte("   P")},
 		},
 	}
 	for _, tC := range testCases {
-		desc := fmt.Sprintf("%s from %s", tC.destAddr, tC.want)
+		desc := fmt.Sprintf("move %s ", tC.move)
 		t.Run(desc, func(t *testing.T) {
 			g := chessgo.Game{Board: &tC.board}
-			got := g.SourceForDest(tC.destAddr)
+			g.Move(tC.move)
+			got := g.Board
 
-			if got != tC.want {
-				t.Errorf("got %q, wanted %q as source for dest %q", got, tC.want, tC.destAddr)
+			if !reflect.DeepEqual(got, &tC.want) {
+				t.Errorf("got %+v, wanted %+v after move %q", got, &tC.want, tC.move)
 			}
 		})
 	}
@@ -58,6 +59,7 @@ func (b *StubBoard) GetSquare(addr string) chessgo.Piece {
 }
 
 func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
+	b.squares[b.getIndex(addr)] = byte(piece)
 }
 
 func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
@@ -65,13 +67,24 @@ func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
 }
 
 func (b *StubBoard) getIndex(addr string) uint8 {
-	n := uint8(math.Sqrt(float64(len(b.squares))))
+	file := addr[0]
+	rank := addr[1]
 
-	maxFile := uint8('a') + n
-	maxRank := uint8('1') + n
+	var x, y uint8
 
-	file := 7 - (maxFile - addr[0])
-	rank := 7 - (maxRank - uint8(addr[1]))
+	switch file {
+	case 'a':
+		x = 0
+	case 'b':
+		x = 1
+	}
 
-	return file + rank*8
+	switch rank {
+	case '1':
+		y = 0
+	case '2':
+		y = 1
+	}
+
+	return y*2 + x
 }

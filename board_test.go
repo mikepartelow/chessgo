@@ -141,7 +141,7 @@ func TestSetSquare(t *testing.T) {
 	})
 }
 
-func TestMove(t *testing.T) {
+func TestBoardMove(t *testing.T) {
 	testCases := []struct {
 		srcAddr  string
 		dstAddr  string
