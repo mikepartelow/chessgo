@@ -17,3 +17,24 @@ var WhiteBishop Piece = Piece('B')
 var WhiteQueen Piece = Piece('Q')
 var WhiteKing Piece = Piece('K')
 var WhitePawn Piece = Piece('P')
+
+func validPiece(p Piece) bool {
+	switch p {
+	case NoPiece,
+		BlackRook,
+		BlackKnight,
+		BlackBishop,
+		BlackQueen,
+		BlackKing,
+		BlackPawn,
+
+		WhiteRook,
+		WhiteKnight,
+		WhiteBishop,
+		WhiteQueen,
+		WhiteKing,
+		WhitePawn:
+		return true
+	}
+	return false
+}

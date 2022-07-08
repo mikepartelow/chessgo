@@ -21,31 +21,124 @@ func TestNewBoard(t *testing.T) {
 	}
 }
 
+func TestInBounds(t *testing.T) {
+	b := chessgo.NewBoard()
+
+	testCases := []struct {
+		addr string
+		want bool
+	}{
+		{
+			addr: "b8",
+			want: true,
+		},
+		{
+			addr: "b9",
+			want: false,
+		},
+		{
+			addr: "a99",
+			want: false,
+		},
+		{
+			addr: "9",
+			want: false,
+		},
+		{
+			addr: "a",
+			want: false,
+		},
+		{
+			addr: "",
+			want: false,
+		},
+		{
+			addr: fmt.Sprintf("%c1", rune(uint8('a')-1)),
+			want: false,
+		},
+	}
+	for _, tC := range testCases {
+		desc := fmt.Sprintf("%v at %s", tC.want, tC.addr)
+		t.Run(desc, func(t *testing.T) {
+			got := b.InBounds(tC.addr)
+
+			if got != tC.want {
+				t.Errorf("got %v wanted %v for %q", got, tC.want, tC.addr)
+			}
+		})
+	}
+}
+
 func TestGetSquare(t *testing.T) {
 	b := chessgo.NewBoard()
 
-	want := chessgo.BlackKnight
-	got := b.GetSquare("b8")
+	testCases := []struct {
+		addr string
+		want chessgo.Piece
+	}{
+		{
+			addr: "b8",
+			want: chessgo.BlackKnight,
+		},
+	}
+	for _, tC := range testCases {
+		desc := fmt.Sprintf("%c at %s", tC.want, tC.addr)
+		t.Run(desc, func(t *testing.T) {
+			got := b.GetSquare(tC.addr)
 
-	if got != want {
-		t.Errorf("got %q wanted %q", got, want)
+			if got != tC.want {
+				t.Errorf("got %q wanted %q", got, tC.want)
+			}
+		})
 	}
 
-	// todo: assert a0, h9, i1, ("%c%c", 'a'-1, 10) panics
+	t.Run("panics on out of bounds", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("Expected Panic")
+			}
+		}()
+		b.GetSquare("h9")
+	})
 }
 
 func TestSetSquare(t *testing.T) {
 	b := chessgo.NewBoard()
 
-	addr := "d5"
-	want := chessgo.BlackKnight
-	b.SetSquare(addr, want)
+	t.Run("sets square contents", func(t *testing.T) {
+		addr := "d5"
+		want := chessgo.BlackKnight
+		b.SetSquare(addr, want)
 
-	assertSquare(t, b, addr, want)
+		assertSquare(t, b, addr, want)
+	})
 
-	// todo: assert invalid piece panics
-	// todo: assert a0, h9, i1, ("%c%c", 'a'-1, 10) panics
+	t.Run("panics on out of bounds(a)", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("Expected Panic")
+			}
+		}()
+		b.SetSquare("-1", chessgo.BlackBishop)
+	})
 
+	t.Run("panics on out of bounds(b)", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("Expected Panic")
+			}
+		}()
+		b.SetSquare("a99", chessgo.BlackBishop)
+	})
+
+	t.Run("panics on invalid piece", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("Expected Panic")
+			}
+		}()
+		b.SetSquare("a1", 'X')
+	})
 }
 
 func TestMove(t *testing.T) {
@@ -86,8 +179,25 @@ func TestMove(t *testing.T) {
 		})
 	}
 
-	// todo: inalid fromAddr panic
-	// todo: inalid toAddr panic
+	t.Run("panics on out of bounds(a)", func(t *testing.T) {
+		b := chessgo.NewBoard()
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("Expected Panic")
+			}
+		}()
+		b.Move("a1", "a99")
+	})
+
+	t.Run("panics on out of bounds(b)", func(t *testing.T) {
+		b := chessgo.NewBoard()
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("Expected Panic")
+			}
+		}()
+		b.Move("z99", "a1")
+	})
 }
 
 func assertSquare(t testing.TB, board *chessgo.Board, addr string, want chessgo.Piece) {
