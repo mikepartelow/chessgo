@@ -24,7 +24,7 @@ func TestNewBoard(t *testing.T) {
 func TestGetSquare(t *testing.T) {
 	b := chessgo.NewBoard()
 
-	want := 'n'
+	want := chessgo.BlackKnight
 	got := b.GetSquare("b8")
 
 	if got != want {
@@ -38,7 +38,7 @@ func TestSetSquare(t *testing.T) {
 	b := chessgo.NewBoard()
 
 	addr := "d5"
-	want := 'n'
+	want := chessgo.BlackKnight
 	b.SetSquare(addr, want)
 
 	assertSquare(t, b, addr, want)
@@ -52,22 +52,22 @@ func TestMove(t *testing.T) {
 	testCases := []struct {
 		fromAddr string
 		toAddr   string
-		replaced rune
+		replaced chessgo.Piece
 	}{
 		{
 			fromAddr: "a2",
 			toAddr:   "a3",
-			replaced: chessgo.EmptySquare,
+			replaced: chessgo.NoPiece,
 		},
 		{
 			fromAddr: "b7",
 			toAddr:   "b5",
-			replaced: chessgo.EmptySquare,
+			replaced: chessgo.NoPiece,
 		},
 		{
 			fromAddr: "c7",
 			toAddr:   "c8",
-			replaced: 'b',
+			replaced: chessgo.BlackBishop,
 		},
 	}
 
@@ -79,7 +79,7 @@ func TestMove(t *testing.T) {
 			want := b.GetSquare(tC.fromAddr)
 			replaced := b.Move(tC.fromAddr, tC.toAddr)
 			assertSquare(t, b, tC.toAddr, want)
-			assertSquare(t, b, tC.fromAddr, chessgo.EmptySquare)
+			assertSquare(t, b, tC.fromAddr, chessgo.NoPiece)
 			if replaced != tC.replaced {
 				t.Errorf("wanted to replace %c, replaced %c instead", tC.replaced, replaced)
 			}
@@ -90,7 +90,7 @@ func TestMove(t *testing.T) {
 	// todo: inalid toAddr panic
 }
 
-func assertSquare(t testing.TB, board *chessgo.Board, addr string, want rune) {
+func assertSquare(t testing.TB, board *chessgo.Board, addr string, want chessgo.Piece) {
 	t.Helper()
 	got := board.GetSquare(addr)
 	if got != want {
@@ -98,39 +98,39 @@ func assertSquare(t testing.TB, board *chessgo.Board, addr string, want rune) {
 	}
 }
 
-func defaultPiece(rank, file rune) rune {
+func defaultPiece(rank, file rune) chessgo.Piece {
 	switch rank {
 	case '1':
 		switch file {
 		case 'a', 'h':
-			return 'R'
+			return chessgo.WhiteRook
 		case 'b', 'g':
-			return 'N'
+			return chessgo.WhiteKnight
 		case 'c', 'f':
-			return 'B'
+			return chessgo.WhiteBishop
 		case 'd':
-			return 'Q'
+			return chessgo.WhiteQueen
 		case 'e':
-			return 'K'
+			return chessgo.WhiteKing
 		}
 	case '8':
 		switch file {
 		case 'a', 'h':
-			return 'r'
+			return chessgo.BlackRook
 		case 'b', 'g':
-			return 'n'
+			return chessgo.BlackKnight
 		case 'c', 'f':
-			return 'b'
+			return chessgo.BlackBishop
 		case 'd':
-			return 'q'
+			return chessgo.BlackQueen
 		case 'e':
-			return 'k'
+			return chessgo.BlackKing
 		}
 	case '2':
-		return 'P'
+		return chessgo.WhitePawn
 	case '7':
-		return 'p'
+		return chessgo.BlackPawn
 	}
 
-	return chessgo.EmptySquare
+	return chessgo.NoPiece
 }
