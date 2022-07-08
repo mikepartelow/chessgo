@@ -1,48 +1,40 @@
-package chess
+package chessgo
 
 type Board struct {
-	squares [8][8]rune
+	squares []byte
 }
 
-type Square struct {
-	X uint8 // File
-	Y uint8 // Rank
-}
-
-type Piece rune
-
-can all this
-- [ ] write ACCEPTANCE TEST 0 : board.Move("e4")
-- [ ] write a main.go (in folder, see lgwt)
-
-When you're creating packages, even if they're only internal to your project,
- prefer a top-down consumer driven approach. This will stop you over-imagining
- designs and making abstractions you may not even need and will help ensure
- the tests you write are useful.
-
-
-func (b *Board) Ranks() uint8 { return 8 } // Rows
-func (b *Board) Files() uint8 { return 8 } // Columns
+const (
+	EmptySquare = ' '
+)
 
 func NewBoard() *Board {
 	return &Board{
-		[8][8]rune{
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-			{'R', 'N', 'B', ' ', ' ', ' ', ' ', ' '},
-		},
+		squares: []byte("RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr"),
 	}
 }
 
-func (b *Board) InBounds(square Square) bool {
-	return square.X < b.Files() && square.Y < b.Ranks()
+func (b *Board) GetSquare(addr string) rune {
+	index := b.getIndex(addr)
+	return rune(b.squares[index])
 }
 
-func (b *Board) GetPieceAt(square Square) rune {
-	return b.squares[square.Y][square.X]
+func (b *Board) SetSquare(addr string, piece rune) {
+	index := b.getIndex(addr)
+	b.squares[index] = byte(piece)
+}
+
+func (b *Board) getIndex(addr string) uint8 {
+	file := 7 - (uint8('h') - addr[0])
+	rank := 7 - (uint8('8') - uint8(addr[1]))
+
+	return file + rank*8
+}
+
+func (b *Board) Move(fromAddr, toAddr string) rune {
+	replaced := b.GetSquare(toAddr)
+	b.SetSquare(toAddr, b.GetSquare(fromAddr))
+	b.SetSquare(fromAddr, EmptySquare)
+
+	return replaced
 }

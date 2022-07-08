@@ -1,120 +1,136 @@
-package chess_test
+package chessgo_test
 
 import (
 	"fmt"
-	chess "mp/chessgo"
+	"mp/chessgo"
 	"testing"
 )
 
-func TestBoard(t *testing.T) {
-	b := &chess.Board{}
-
-	t.Run("ranks", func(t *testing.T) {
-		wantRanks := uint8(8)
-		gotRanks := b.Ranks()
-
-		if gotRanks != wantRanks {
-			t.Errorf("got %v wanted %v", gotRanks, wantRanks)
-		}
-	})
-
-	t.Run("files", func(t *testing.T) {
-		wantFiles := uint8(8)
-		gotFiles := b.Files()
-
-		if gotFiles != wantFiles {
-			t.Errorf("got %v wanted %v", gotFiles, wantFiles)
-		}
-	})
-
-	t.Run("bounds", func(t *testing.T) {
-		testCases := []struct {
-			square chess.Square
-			want   bool
-		}{
-			{
-				chess.Square{0, 0},
-				true,
-			},
-			{
-				chess.Square{0, 8},
-				false,
-			},
-			{
-				chess.Square{8, 8},
-				false,
-			},
-			{
-				chess.Square{8, 0},
-				false,
-			},
-			{
-				chess.Square{2, 2},
-				true,
-			},
-			{
-				chess.Square{7, 7},
-				true,
-			},
-		}
-		for _, tC := range testCases {
-			t.Run(fmt.Sprintf("InBounds(%v)", tC.square), func(t *testing.T) {
-				got := b.InBounds(tC.square)
-				if got != tC.want {
-					t.Errorf("got %v want %v", got, tC.want)
-				}
-			})
-		}
-	})
-}
-
 func TestNewBoard(t *testing.T) {
-	b := chess.NewBoard()
+	b := chessgo.NewBoard()
 
-	t.Run("white pieces", func(t *testing.T) {
-		testCases := []struct {
-			square chess.Square
-			want   rune
-		}{
-			{
-				square: chess.Square{0, 7},
-				want:   'R',
-			},
-			{
-				square: chess.Square{1, 7},
-				want:   'N',
-			},
-			{
-				square: chess.Square{2, 7},
-				want:   'B',
-			},
+	files := "abcdefgh"
+	ranks := "12345678"
+
+	for _, file := range files {
+		for _, rank := range ranks {
+			addr := fmt.Sprintf("%c%c", file, rank)
+			want := defaultPiece(rank, file)
+			assertSquare(t, b, addr, want)
 		}
-		for _, tC := range testCases {
-			t.Run(fmt.Sprintf("%c at %v", tC.want, tC.square), func(t *testing.T) {
-				got := b.GetPieceAt(tC.square)
-				if got != tC.want {
-					t.Errorf("got %q at %v, wanted %q", got, tC.square, tC.want)
-				}
-			})
-		}
-	})
-
-	// t.Run("black pieces", func(t *testing.T) {
-
-	// }
-
-	// t.Run("empties", func(t *testing.T) {
-
-	// }
+	}
 }
 
-func TestGetPieceAt(t *testing.T) {
-	b := chess.NewBoard()
+func TestGetSquare(t *testing.T) {
+	b := chessgo.NewBoard()
 
-	var want = ' '
-	got := b.GetPieceAt(chess.Square{0, 0})
+	want := 'n'
+	got := b.GetSquare("b8")
 
 	if got != want {
-		t.Errorf("got %q want %q", got, want)
+		t.Errorf("got %q wanted %q", got, want)
 	}
+
+	// todo: assert a0, h9, i1, ("%c%c", 'a'-1, 10) panics
+}
+
+func TestSetSquare(t *testing.T) {
+	b := chessgo.NewBoard()
+
+	addr := "d5"
+	want := 'n'
+	b.SetSquare(addr, want)
+
+	assertSquare(t, b, addr, want)
+
+	// todo: assert invalid piece panics
+	// todo: assert a0, h9, i1, ("%c%c", 'a'-1, 10) panics
+
+}
+
+func TestMove(t *testing.T) {
+	testCases := []struct {
+		fromAddr string
+		toAddr   string
+		replaced rune
+	}{
+		{
+			fromAddr: "a2",
+			toAddr:   "a3",
+			replaced: chessgo.EmptySquare,
+		},
+		{
+			fromAddr: "b7",
+			toAddr:   "b5",
+			replaced: chessgo.EmptySquare,
+		},
+		{
+			fromAddr: "c7",
+			toAddr:   "c8",
+			replaced: 'b',
+		},
+	}
+
+	for _, tC := range testCases {
+		b := chessgo.NewBoard()
+
+		desc := fmt.Sprintf("%s to %s", tC.fromAddr, tC.toAddr)
+		t.Run(desc, func(t *testing.T) {
+			want := b.GetSquare(tC.fromAddr)
+			replaced := b.Move(tC.fromAddr, tC.toAddr)
+			assertSquare(t, b, tC.toAddr, want)
+			assertSquare(t, b, tC.fromAddr, chessgo.EmptySquare)
+			if replaced != tC.replaced {
+				t.Errorf("wanted to replace %c, replaced %c instead", tC.replaced, replaced)
+			}
+		})
+	}
+
+	// todo: inalid fromAddr panic
+	// todo: inalid toAddr panic
+}
+
+func assertSquare(t testing.TB, board *chessgo.Board, addr string, want rune) {
+	t.Helper()
+	got := board.GetSquare(addr)
+	if got != want {
+		t.Errorf("got %q wanted %q at %q", got, want, addr)
+	}
+}
+
+func defaultPiece(rank, file rune) rune {
+	switch rank {
+	case '1':
+		switch file {
+		case 'a', 'h':
+			return 'R'
+		case 'b', 'g':
+			return 'N'
+		case 'c', 'f':
+			return 'B'
+		case 'd':
+			return 'Q'
+		case 'e':
+			return 'K'
+		}
+	case '8':
+		switch file {
+		case 'a', 'h':
+			return 'r'
+		case 'b', 'g':
+			return 'n'
+		case 'c', 'f':
+			return 'b'
+		case 'd':
+			return 'q'
+		case 'e':
+			return 'k'
+		}
+	case '2':
+		return 'P'
+	case '7':
+		return 'p'
+	}
+
+	return chessgo.EmptySquare
 }
