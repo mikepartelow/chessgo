@@ -1,13 +1,9 @@
 package chessgo
 
 type Game struct {
-	board *Board
+	Board Board
 }
 
-func NewGame() *Game {
-	return &Game{NewBoard()}
-}
-
-func (g *Game) Board() *Board {
-	return g.board
+func (g *Game) SourceForDest(dstAddr string) string {
+	return "a1"
 }

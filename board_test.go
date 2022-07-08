@@ -143,23 +143,23 @@ func TestSetSquare(t *testing.T) {
 
 func TestMove(t *testing.T) {
 	testCases := []struct {
-		fromAddr string
-		toAddr   string
+		srcAddr  string
+		dstAddr  string
 		replaced chessgo.Piece
 	}{
 		{
-			fromAddr: "a2",
-			toAddr:   "a3",
+			srcAddr:  "a2",
+			dstAddr:  "a3",
 			replaced: chessgo.NoPiece,
 		},
 		{
-			fromAddr: "b7",
-			toAddr:   "b5",
+			srcAddr:  "b7",
+			dstAddr:  "b5",
 			replaced: chessgo.NoPiece,
 		},
 		{
-			fromAddr: "c7",
-			toAddr:   "c8",
+			srcAddr:  "c7",
+			dstAddr:  "c8",
 			replaced: chessgo.BlackBishop,
 		},
 	}
@@ -167,12 +167,12 @@ func TestMove(t *testing.T) {
 	for _, tC := range testCases {
 		b := chessgo.NewBoard()
 
-		desc := fmt.Sprintf("%s to %s", tC.fromAddr, tC.toAddr)
+		desc := fmt.Sprintf("%s to %s", tC.srcAddr, tC.dstAddr)
 		t.Run(desc, func(t *testing.T) {
-			want := b.GetSquare(tC.fromAddr)
-			replaced := b.Move(tC.fromAddr, tC.toAddr)
-			assertSquare(t, b, tC.toAddr, want)
-			assertSquare(t, b, tC.fromAddr, chessgo.NoPiece)
+			want := b.GetSquare(tC.srcAddr)
+			replaced := b.Move(tC.srcAddr, tC.dstAddr)
+			assertSquare(t, b, tC.dstAddr, want)
+			assertSquare(t, b, tC.srcAddr, chessgo.NoPiece)
 			if replaced != tC.replaced {
 				t.Errorf("wanted to replace %c, replaced %c instead", tC.replaced, replaced)
 			}
@@ -200,7 +200,7 @@ func TestMove(t *testing.T) {
 	})
 }
 
-func assertSquare(t testing.TB, board *chessgo.Board, addr string, want chessgo.Piece) {
+func assertSquare(t testing.TB, board chessgo.Board, addr string, want chessgo.Piece) {
 	t.Helper()
 	got := board.GetSquare(addr)
 	if got != want {
