@@ -2,10 +2,13 @@ package chessgo_test
 
 import (
 	"fmt"
+	"log"
 	"mp/chessgo"
 	"reflect"
 	"testing"
 )
+
+// todo: this is an integration test!
 
 // func TestGame(t *testing.T) {
 // 	g := chessgo.NewGame()
@@ -22,6 +25,7 @@ type StubBoard struct {
 func TestGameMove(t *testing.T) {
 	testCases := []struct {
 		board StubBoard
+		turn  chessgo.Color
 		move  string
 		want  StubBoard
 	}{
@@ -31,15 +35,32 @@ func TestGameMove(t *testing.T) {
 			want:  StubBoard{squares: []byte("  P ")},
 		},
 		{
-			board: StubBoard{squares: []byte(" P   ")},
-			move:  "a2",
+			board: StubBoard{squares: []byte(" P  ")},
+			move:  "b2",
 			want:  StubBoard{squares: []byte("   P")},
+		},
+		{
+			board: StubBoard{squares: []byte("B   ")},
+			move:  "Bb2",
+			want:  StubBoard{squares: []byte("   B")},
+		},
+		{
+			board: StubBoard{squares: []byte("b   ")},
+			turn:  chessgo.Black,
+			move:  "Bb2",
+			want:  StubBoard{squares: []byte("   b")},
+		},
+		{
+			board: StubBoard{squares: []byte("  p ")},
+			turn:  chessgo.Black,
+			move:  "a1",
+			want:  StubBoard{squares: []byte("p   ")},
 		},
 	}
 	for _, tC := range testCases {
-		desc := fmt.Sprintf("move %s ", tC.move)
+		desc := fmt.Sprintf("move %s", tC.move)
 		t.Run(desc, func(t *testing.T) {
-			g := chessgo.Game{Board: &tC.board}
+			g := chessgo.Game{Board: &tC.board, Turn: tC.turn}
 			g.Move(tC.move)
 			got := g.Board
 
@@ -48,10 +69,26 @@ func TestGameMove(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("turn toggles on valid move", func(t *testing.T) {
+		g := chessgo.Game{Board: &StubBoard{squares: []byte("P   ")}}
+		if g.Turn != chessgo.White {
+			t.Errorf("expected Turn = White")
+		}
+		g.Move("a2")
+		if g.Turn != chessgo.Black {
+			t.Errorf("expected Turn = Black")
+		}
+	})
+
+	// t.Run("turn does not toggle on invalid move", func(t *testing.T) {
+
+	// })
+
 }
 
 func (b *StubBoard) InBounds(addr string) bool {
-	return false
+	return b.getIndex(addr) < uint8(len(b.squares))
 }
 
 func (b *StubBoard) GetSquare(addr string) chessgo.Piece {
@@ -63,7 +100,11 @@ func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
 }
 
 func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
-	return chessgo.NoPiece
+	replaced := b.GetSquare(dstAddr)
+	log.Printf("Moving %q to %q", srcAddr, dstAddr)
+	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
+	b.SetSquare(srcAddr, chessgo.NoPiece)
+	return replaced
 }
 
 func (b *StubBoard) getIndex(addr string) uint8 {

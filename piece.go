@@ -1,5 +1,20 @@
 package chessgo
 
+type Color uint8
+
+var White = Color(0)
+var Black = Color(1)
+
+func ToggleColor(color Color) Color {
+	switch color {
+	case White:
+		return Black
+	case Black:
+		return White
+	}
+	panic("Invalid Color")
+}
+
 type Piece rune
 
 var NoPiece Piece = Piece(' ')
@@ -17,6 +32,28 @@ var WhiteBishop Piece = Piece('B')
 var WhiteQueen Piece = Piece('Q')
 var WhiteKing Piece = Piece('K')
 var WhitePawn Piece = Piece('P')
+
+func Pawn(color Color) Piece {
+	switch color {
+	case White:
+		return WhitePawn
+	case Black:
+		return BlackPawn
+	default:
+		panic("Invalid color")
+	}
+}
+
+func Bishop(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteBishop
+	case Black:
+		return BlackBishop
+	default:
+		panic("Invalid color")
+	}
+}
 
 func validPiece(p Piece) bool {
 	switch p {
