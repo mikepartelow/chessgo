@@ -25,6 +25,7 @@ func (g *Game) Move(move string) {
 }
 
 func (g *Game) parseMove(moveStr string) (mv move) {
+	// todo: refactor this even more
 	mv.piece = Pawn(g.Turn)
 
 	dstAddrBuf := bytes.Buffer{}
@@ -48,36 +49,34 @@ func (g *Game) parseMove(moveStr string) (mv move) {
 
 	switch mv.piece {
 	case WhitePawn:
-		mv.srcAddr = fmt.Sprintf("%c%c", dstFile, byte(uint8(dstRank)-1))
-		if g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece {
+		if g.isSrc(&mv, dstFile, byte(uint8(dstRank)-1)) {
 			return
 		}
 	case BlackPawn:
-		mv.srcAddr = fmt.Sprintf("%c%c", dstFile, byte(uint8(dstRank)+1))
-		if g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece {
+		if g.isSrc(&mv, dstFile, byte(uint8(dstRank)+1)) {
 			return
 		}
 	case WhiteBishop, BlackBishop:
-		mv.srcAddr = fmt.Sprintf("%c%c", byte(uint8(dstFile)-1), byte(uint8(dstRank)-1))
-		if g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece {
+		if g.isSrc(&mv, byte(uint8(dstFile)-1), byte(uint8(dstRank)-1)) {
 			return
 		}
-		mv.srcAddr = fmt.Sprintf("%c%c", byte(uint8(dstFile)-1), byte(uint8(dstRank)+1))
-		if g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece {
+		if g.isSrc(&mv, byte(uint8(dstFile)-1), byte(uint8(dstRank)+1)) {
 			return
 		}
-		mv.srcAddr = fmt.Sprintf("%c%c", byte(uint8(dstFile)+1), byte(uint8(dstRank)-1))
-		if g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece {
+		if g.isSrc(&mv, byte(uint8(dstFile)+1), byte(uint8(dstRank)-1)) {
 			return
 		}
-		mv.srcAddr = fmt.Sprintf("%c%c", byte(uint8(dstFile)+1), byte(uint8(dstRank)+1))
-		if g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece {
+		if g.isSrc(&mv, byte(uint8(dstFile)+1), byte(uint8(dstRank)+1)) {
 			return
 		}
-
 	default:
 		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
 	}
 
 	panic(fmt.Sprintf("Failed to parse move string: %s", moveStr))
+}
+
+func (g *Game) isSrc(mv *move, file, rank byte) bool {
+	mv.srcAddr = fmt.Sprintf("%c%c", file, rank)
+	return g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece
 }
