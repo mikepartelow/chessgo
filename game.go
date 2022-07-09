@@ -13,6 +13,8 @@ type Game struct {
 
 type move struct {
 	srcAddr  string
+	dstFile  byte
+	dstRank  byte
 	dstAddr  string
 	piece    Piece
 	replaced Piece
@@ -39,11 +41,29 @@ func (g *Game) Move(move string) (Piece, error) {
 	return mv.replaced, nil
 }
 
-func (g *Game) parseMove(moveStr string) (mv move) {
-	// todo: refactor this even more
+func (g *Game) parseMove(moveStr string) (mv move) { // todo: refactor this even more
 	mv.piece = Pawn(g.Turn)
 	mv.replaced = NoPiece
 
+	if err := g.parseDst(moveStr, &mv); err != nil {
+		return
+	}
+
+	log.Printf("Moving %c to %s", mv.piece, mv.dstAddr)
+
+	switch mv.piece {
+	case WhitePawn, BlackPawn:
+		g.findPawnSrc(&mv)
+		return
+	case WhiteBishop, BlackBishop:
+		g.findBishopSrc(&mv)
+		return
+	default:
+		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
+	}
+}
+
+func (g *Game) parseDst(moveStr string, mv *move) error {
 	dstAddrBuf := bytes.Buffer{}
 
 	for i := len(moveStr) - 1; i >= 0; i-- {
@@ -59,47 +79,53 @@ func (g *Game) parseMove(moveStr string) (mv move) {
 		}
 	}
 
-	dstFile := dstAddrBuf.Bytes()[1]
-	dstRank := dstAddrBuf.Bytes()[0]
-	mv.dstAddr = fmt.Sprintf("%c%c", dstFile, dstRank)
+	mv.dstFile, mv.dstRank = dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0]
+
+	mv.dstAddr = fmt.Sprintf("%c%c", mv.dstFile, mv.dstRank)
 	mv.replaced = g.Board.GetSquare(mv.dstAddr)
 
 	if mv.replaced != NoPiece && ColorOf(mv.replaced) == g.Turn {
 		mv.error = ErrorFriendlyFire{}
 	}
 
-	log.Printf("Moving %c to %s", mv.piece, mv.dstAddr)
-
-	switch mv.piece {
-	case WhitePawn:
-		if g.isSrc(&mv, dstFile, byte(uint8(dstRank)-1)) {
-			return
-		}
-	case BlackPawn:
-		if g.isSrc(&mv, dstFile, byte(uint8(dstRank)+1)) {
-			return
-		}
-	case WhiteBishop, BlackBishop:
-		if g.isSrc(&mv, byte(uint8(dstFile)-1), byte(uint8(dstRank)-1)) {
-			return
-		}
-		if g.isSrc(&mv, byte(uint8(dstFile)-1), byte(uint8(dstRank)+1)) {
-			return
-		}
-		if g.isSrc(&mv, byte(uint8(dstFile)+1), byte(uint8(dstRank)-1)) {
-			return
-		}
-		if g.isSrc(&mv, byte(uint8(dstFile)+1), byte(uint8(dstRank)+1)) {
-			return
-		}
-	default:
-		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
-	}
-
-	panic(fmt.Sprintf("Failed to parse move string: %s", moveStr))
+	return mv.error
 }
 
 func (g *Game) isSrc(mv *move, file, rank byte) bool {
-	mv.srcAddr = fmt.Sprintf("%c%c", file, rank)
-	return g.Board.InBounds(mv.srcAddr) && g.Board.GetSquare(mv.srcAddr) == mv.piece
+	srcAddr := fmt.Sprintf("%c%c", file, rank)
+	if g.Board.InBounds(srcAddr) && g.Board.GetSquare(srcAddr) == mv.piece {
+		mv.srcAddr = srcAddr
+		return true
+	}
+	return false
+}
+
+func (g *Game) findPawnSrc(mv *move) {
+	switch mv.piece {
+	case WhitePawn:
+		if g.isSrc(mv, mv.dstFile, byte(uint8(mv.dstRank)-1)) {
+			return
+		}
+	case BlackPawn:
+		if g.isSrc(mv, mv.dstFile, byte(uint8(mv.dstRank)+1)) {
+			return
+		}
+	default:
+		panic("WTF")
+	}
+}
+
+func (g *Game) findBishopSrc(mv *move) {
+	if g.isSrc(mv, byte(uint8(mv.dstFile)-1), byte(uint8(mv.dstRank)-1)) {
+		return
+	}
+	if g.isSrc(mv, byte(uint8(mv.dstFile)-1), byte(uint8(mv.dstRank)+1)) {
+		return
+	}
+	if g.isSrc(mv, byte(uint8(mv.dstFile)+1), byte(uint8(mv.dstRank)-1)) {
+		return
+	}
+	if g.isSrc(mv, byte(uint8(mv.dstFile)+1), byte(uint8(mv.dstRank)+1)) {
+		return
+	}
 }
