@@ -1,5 +1,7 @@
 package chessgo
 
+import "fmt"
+
 type Color uint8
 
 var White = Color(0)
@@ -74,4 +76,26 @@ func validPiece(p Piece) bool {
 		return true
 	}
 	return false
+}
+
+func ColorOf(p Piece) Color {
+	switch p {
+	case BlackRook,
+		BlackKnight,
+		BlackBishop,
+		BlackQueen,
+		BlackKing,
+		BlackPawn:
+		return Black
+
+	case WhiteRook,
+		WhiteKnight,
+		WhiteBishop,
+		WhiteQueen,
+		WhiteKing,
+		WhitePawn:
+		return White
+	}
+
+	panic(fmt.Sprintf("No color for %c", p))
 }

@@ -12,21 +12,37 @@ type Game struct {
 }
 
 type move struct {
-	srcAddr string
-	dstAddr string
-	piece   Piece
+	srcAddr  string
+	dstAddr  string
+	piece    Piece
+	replaced Piece
+	capture  bool
+	error    error
 }
 
-func (g *Game) Move(move string) {
+func (g *Game) Move(move string) (Piece, error) {
 	mv := g.parseMove(move)
+
+	if mv.error != nil {
+		return NoPiece, mv.error
+	}
+
 	log.Printf("%+v\n", mv)
 	g.Board.Move(mv.srcAddr, mv.dstAddr)
 	g.Turn = ToggleColor(g.Turn)
+
+	// todo:
+	// if mv.capture && mv.replaced == NoPiece {
+	// 	return NoPiece, errors.New("Expected capture but didn't.")
+	// }
+
+	return mv.replaced, nil
 }
 
 func (g *Game) parseMove(moveStr string) (mv move) {
 	// todo: refactor this even more
 	mv.piece = Pawn(g.Turn)
+	mv.replaced = NoPiece
 
 	dstAddrBuf := bytes.Buffer{}
 
@@ -35,6 +51,8 @@ func (g *Game) parseMove(moveStr string) (mv move) {
 			dstAddrBuf.WriteByte(moveStr[i])
 		} else {
 			switch moveStr[i] {
+			case 'x':
+				mv.capture = true
 			case 'B':
 				mv.piece = Bishop(g.Turn)
 			}
@@ -44,6 +62,11 @@ func (g *Game) parseMove(moveStr string) (mv move) {
 	dstFile := dstAddrBuf.Bytes()[1]
 	dstRank := dstAddrBuf.Bytes()[0]
 	mv.dstAddr = fmt.Sprintf("%c%c", dstFile, dstRank)
+	mv.replaced = g.Board.GetSquare(mv.dstAddr)
+
+	if mv.replaced != NoPiece && ColorOf(mv.replaced) == g.Turn {
+		mv.error = ErrorFriendlyFire{}
+	}
 
 	log.Printf("Moving %c to %s", mv.piece, mv.dstAddr)
 

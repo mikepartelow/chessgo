@@ -24,48 +24,77 @@ type StubBoard struct {
 
 func TestGameMove(t *testing.T) {
 	testCases := []struct {
-		board StubBoard
-		turn  chessgo.Color
-		move  string
-		want  StubBoard
+		board        StubBoard
+		turn         chessgo.Color
+		move         string
+		wantBoard    StubBoard
+		wantCaptured chessgo.Piece
+		wantErr      chessgo.Error
 	}{
 		{
-			board: StubBoard{squares: []byte("P   ")},
-			move:  "a2",
-			want:  StubBoard{squares: []byte("  P ")},
+			board:        StubBoard{squares: []byte("P   ")},
+			move:         "a2",
+			wantBoard:    StubBoard{squares: []byte("  P ")},
+			wantCaptured: chessgo.NoPiece,
 		},
 		{
-			board: StubBoard{squares: []byte(" P  ")},
-			move:  "b2",
-			want:  StubBoard{squares: []byte("   P")},
+			board:        StubBoard{squares: []byte(" P  ")},
+			move:         "b2",
+			wantBoard:    StubBoard{squares: []byte("   P")},
+			wantCaptured: chessgo.NoPiece,
 		},
 		{
-			board: StubBoard{squares: []byte("B   ")},
-			move:  "Bb2",
-			want:  StubBoard{squares: []byte("   B")},
+			board:        StubBoard{squares: []byte("B   ")},
+			move:         "Bb2",
+			wantBoard:    StubBoard{squares: []byte("   B")},
+			wantCaptured: chessgo.NoPiece,
 		},
 		{
-			board: StubBoard{squares: []byte("b   ")},
-			turn:  chessgo.Black,
-			move:  "Bb2",
-			want:  StubBoard{squares: []byte("   b")},
+			board:        StubBoard{squares: []byte("b   ")},
+			turn:         chessgo.Black,
+			move:         "Bb2",
+			wantBoard:    StubBoard{squares: []byte("   b")},
+			wantCaptured: chessgo.NoPiece,
 		},
 		{
-			board: StubBoard{squares: []byte("  p ")},
-			turn:  chessgo.Black,
-			move:  "a1",
-			want:  StubBoard{squares: []byte("p   ")},
+			board:        StubBoard{squares: []byte("  p ")},
+			turn:         chessgo.Black,
+			move:         "a1",
+			wantBoard:    StubBoard{squares: []byte("p   ")},
+			wantCaptured: chessgo.NoPiece,
+		},
+		{
+			board:        StubBoard{squares: []byte("b  N")},
+			turn:         chessgo.Black,
+			move:         "Bxb2",
+			wantBoard:    StubBoard{squares: []byte("   b")},
+			wantCaptured: chessgo.WhiteKnight,
+		},
+		{
+			board:        StubBoard{squares: []byte("b  n")},
+			turn:         chessgo.Black,
+			move:         "Bxb2",
+			wantBoard:    StubBoard{squares: []byte("b  n")},
+			wantCaptured: chessgo.NoPiece,
+			wantErr:      chessgo.ErrorFriendlyFire{},
 		},
 	}
 	for _, tC := range testCases {
 		desc := fmt.Sprintf("move %s", tC.move)
 		t.Run(desc, func(t *testing.T) {
 			g := chessgo.Game{Board: &tC.board, Turn: tC.turn}
-			g.Move(tC.move)
-			got := g.Board
+			captured, err := g.Move(tC.move)
 
-			if !reflect.DeepEqual(got, &tC.want) {
-				t.Errorf("got %+v, wanted %+v after move %q", got, &tC.want, tC.move)
+			if err != tC.wantErr {
+				t.Errorf("got err %v wanted %v", err, tC.wantErr)
+			}
+
+			if !reflect.DeepEqual(g.Board, &tC.wantBoard) {
+				t.Errorf("got %+v, wanted %+v after move %q", g.Board, &tC.wantBoard, tC.move)
+			}
+
+			if captured != tC.wantCaptured {
+				t.Errorf("got %q captured, wanted %q", captured, tC.wantCaptured)
 			}
 		})
 	}
@@ -100,11 +129,11 @@ func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
 }
 
 func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
-	replaced := b.GetSquare(dstAddr)
+	captured := b.GetSquare(dstAddr)
 	log.Printf("Moving %q to %q", srcAddr, dstAddr)
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
 	b.SetSquare(srcAddr, chessgo.NoPiece)
-	return replaced
+	return captured
 }
 
 func (b *StubBoard) getIndex(addr string) uint8 {
