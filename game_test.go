@@ -118,7 +118,12 @@ func TestGameMove(t *testing.T) {
 		if g.Turn != chessgo.White {
 			t.Errorf("expected Turn = White")
 		}
-		g.Move("a2")
+		_, err := g.Move("a2")
+
+		if err != nil {
+			t.Errorf("expected nil err")
+		}
+
 		if g.Turn != chessgo.Black {
 			t.Errorf("expected Turn = Black")
 		}
