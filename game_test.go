@@ -3,6 +3,7 @@ package chessgo_test
 import (
 	"fmt"
 	"log"
+	"math"
 	"mp/chessgo"
 	"reflect"
 	"testing"
@@ -78,6 +79,19 @@ func TestGameMove(t *testing.T) {
 			wantCaptured: chessgo.NoPiece,
 			wantErr:      chessgo.ErrorFriendlyFire{},
 		},
+		{
+			board:        StubBoard{squares: []byte("    P           ")},
+			move:         "a4",
+			wantBoard:    StubBoard{squares: []byte("            P   ")},
+			wantCaptured: chessgo.NoPiece,
+		},
+		{
+			board:        StubBoard{squares: []byte("        p       ")},
+			turn:         chessgo.Black,
+			move:         "a1",
+			wantBoard:    StubBoard{squares: []byte("p               ")},
+			wantCaptured: chessgo.NoPiece,
+		},
 	}
 	for _, tC := range testCases {
 		desc := fmt.Sprintf("move %s", tC.move)
@@ -90,7 +104,7 @@ func TestGameMove(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(g.Board, &tC.wantBoard) {
-				t.Errorf("got %+v, wanted %+v after move %q", g.Board, &tC.wantBoard, tC.move)
+				t.Errorf("got %q, wanted %q after move %q", g.Board, &tC.wantBoard, tC.move)
 			}
 
 			if captured != tC.wantCaptured {
@@ -130,10 +144,27 @@ func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
 
 func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
 	captured := b.GetSquare(dstAddr)
-	log.Printf("Moving %q to %q", srcAddr, dstAddr)
+	log.Printf("Moving %q (%d) to %q (%d)", srcAddr, b.getIndex(srcAddr), dstAddr, b.getIndex(dstAddr))
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
 	b.SetSquare(srcAddr, chessgo.NoPiece)
 	return captured
+}
+
+func (b *StubBoard) String() string {
+	return string(b.squares)
+}
+
+func (b *StubBoard) MaxFile() rune {
+	m := rune(uint8('a') + uint8(math.Sqrt(float64(len(b.squares)))))
+	log.Printf("MaxFile: %c", m)
+	return m
+}
+
+func (b *StubBoard) MaxRank() rune {
+	log.Printf("MaxRank: len(squares): %d", len(b.squares))
+	m := rune(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
+	log.Printf("MaxRank: %c", m)
+	return m
 }
 
 func (b *StubBoard) getIndex(addr string) uint8 {
@@ -147,6 +178,10 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 		x = 0
 	case 'b':
 		x = 1
+	case 'c':
+		x = 2
+	case 'd':
+		x = 3
 	}
 
 	switch rank {
@@ -154,7 +189,11 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 		y = 0
 	case '2':
 		y = 1
+	case '3':
+		y = 2
+	case '4':
+		y = 3
 	}
 
-	return y*2 + x
+	return y*uint8(math.Sqrt(float64(len(b.squares)))) + x
 }

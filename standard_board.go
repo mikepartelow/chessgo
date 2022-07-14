@@ -49,3 +49,15 @@ func (b *StandardBoard) Move(srcAddr, dstAddr string) Piece {
 
 	return replaced
 }
+
+func (b *StandardBoard) String() string {
+	return string(b.squares)
+}
+
+func (b *StandardBoard) MaxFile() rune {
+	return 'h'
+}
+
+func (b *StandardBoard) MaxRank() rune {
+	return '8'
+}

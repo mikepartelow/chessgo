@@ -200,6 +200,29 @@ func TestBoardMove(t *testing.T) {
 	})
 }
 
+func TestBoardString(t *testing.T) {
+	t.Run("init", func(t *testing.T) {
+		board := chessgo.NewBoard()
+		want := "RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr"
+		got := board.String()
+
+		if got != want {
+			t.Errorf("got %q wanted %q", got, want)
+		}
+	})
+
+	t.Run("after a move", func(t *testing.T) {
+		board := chessgo.NewBoard()
+		board.Move("e2", "e4")
+		want := "RNBQKBNRPPPP PPP            P                   pppppppprnbqkbnr"
+		got := board.String()
+
+		if got != want {
+			t.Errorf("got %q wanted %q", got, want)
+		}
+	})
+}
+
 func assertSquare(t testing.TB, board chessgo.Board, addr string, want chessgo.Piece) {
 	t.Helper()
 	got := board.GetSquare(addr)
