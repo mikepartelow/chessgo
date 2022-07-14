@@ -33,36 +33,31 @@ func TestGameMove(t *testing.T) {
 		wantErr      chessgo.Error
 	}{
 		{
-			board:        StubBoard{squares: []byte("P   ")},
-			move:         "a2",
-			wantBoard:    StubBoard{squares: []byte("  P ")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte("P   ")},
+			move:      "a2",
+			wantBoard: StubBoard{squares: []byte("  P ")},
 		},
 		{
-			board:        StubBoard{squares: []byte(" P  ")},
-			move:         "b2",
-			wantBoard:    StubBoard{squares: []byte("   P")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte(" P  ")},
+			move:      "b2",
+			wantBoard: StubBoard{squares: []byte("   P")},
 		},
 		{
-			board:        StubBoard{squares: []byte("B   ")},
-			move:         "Bb2",
-			wantBoard:    StubBoard{squares: []byte("   B")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte("B   ")},
+			move:      "Bb2",
+			wantBoard: StubBoard{squares: []byte("   B")},
 		},
 		{
-			board:        StubBoard{squares: []byte("b   ")},
-			turn:         chessgo.Black,
-			move:         "Bb2",
-			wantBoard:    StubBoard{squares: []byte("   b")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte("b   ")},
+			turn:      chessgo.Black,
+			move:      "Bb2",
+			wantBoard: StubBoard{squares: []byte("   b")},
 		},
 		{
-			board:        StubBoard{squares: []byte("  p ")},
-			turn:         chessgo.Black,
-			move:         "a1",
-			wantBoard:    StubBoard{squares: []byte("p   ")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte("  p ")},
+			turn:      chessgo.Black,
+			move:      "a1",
+			wantBoard: StubBoard{squares: []byte("p   ")},
 		},
 		{
 			board:        StubBoard{squares: []byte("b  N")},
@@ -72,26 +67,54 @@ func TestGameMove(t *testing.T) {
 			wantCaptured: chessgo.WhiteKnight,
 		},
 		{
-			board:        StubBoard{squares: []byte("b  n")},
-			turn:         chessgo.Black,
-			move:         "Bxb2",
-			wantBoard:    StubBoard{squares: []byte("b  n")},
-			wantCaptured: chessgo.NoPiece,
-			wantErr:      chessgo.ErrorFriendlyFire{},
+			board:     StubBoard{squares: []byte("b  n")},
+			turn:      chessgo.Black,
+			move:      "Bxb2",
+			wantBoard: StubBoard{squares: []byte("b  n")},
+			wantErr:   chessgo.ErrorFriendlyFire{},
 		},
 		{
-			board:        StubBoard{squares: []byte("    P           ")},
-			move:         "a4",
-			wantBoard:    StubBoard{squares: []byte("            P   ")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte("    P           ")},
+			move:      "a4",
+			wantBoard: StubBoard{squares: []byte("            P   ")},
 		},
 		{
-			board:        StubBoard{squares: []byte("        p       ")},
-			turn:         chessgo.Black,
-			move:         "a1",
-			wantBoard:    StubBoard{squares: []byte("p               ")},
-			wantCaptured: chessgo.NoPiece,
+			board:     StubBoard{squares: []byte("        p       ")},
+			turn:      chessgo.Black,
+			move:      "a1",
+			wantBoard: StubBoard{squares: []byte("p               ")},
 		},
+		{
+			board:        StubBoard{squares: []byte("P  q")},
+			move:         "axb2",
+			wantBoard:    StubBoard{squares: []byte("   P")},
+			wantCaptured: chessgo.BlackQueen,
+		},
+		{
+			board:        StubBoard{squares: []byte(" Pq ")},
+			move:         "bxa2",
+			wantBoard:    StubBoard{squares: []byte("  P ")},
+			wantCaptured: chessgo.BlackQueen,
+		},
+		// todo: disambiguate the move (left diagonal capture) between two possible pawns
+		// todo: disambiguate the move (right diagonal capture) between two possible pawns
+		{
+			board:        StubBoard{squares: []byte("Q  p")},
+			turn:         chessgo.Black,
+			move:         "bxa1",
+			wantBoard:    StubBoard{squares: []byte("p   ")},
+			wantCaptured: chessgo.WhiteQueen,
+		},
+		{
+			board:        StubBoard{squares: []byte(" Qp ")},
+			turn:         chessgo.Black,
+			move:         "axb1",
+			wantBoard:    StubBoard{squares: []byte(" p  ")},
+			wantCaptured: chessgo.WhiteQueen,
+		},
+		// todo: disambiguate the move (left diagonal capture) between two possible pawns
+		// todo: disambiguate the move (right diagonal capture) between two possible pawns
+
 	}
 	for _, tC := range testCases {
 		desc := fmt.Sprintf("move %s", tC.move)
@@ -107,7 +130,7 @@ func TestGameMove(t *testing.T) {
 				t.Errorf("got %q, wanted %q after move %q", g.Board, &tC.wantBoard, tC.move)
 			}
 
-			if captured != tC.wantCaptured {
+			if tC.wantCaptured != chessgo.Piece(0) && captured != tC.wantCaptured {
 				t.Errorf("got %q captured, wanted %q", captured, tC.wantCaptured)
 			}
 		})
@@ -200,5 +223,7 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 		y = 3
 	}
 
-	return y*uint8(math.Sqrt(float64(len(b.squares)))) + x
+	idx := y*uint8(math.Sqrt(float64(len(b.squares)))) + x
+	log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
+	return idx
 }
