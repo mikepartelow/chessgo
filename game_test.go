@@ -134,6 +134,11 @@ func TestGameMove(t *testing.T) {
 			move:      "Bd1",
 			wantBoard: StubBoard{squares: []byte("   B            ")},
 		},
+		{
+			board:     StubBoard{squares: []byte("Q      k ")},
+			move:      "Qa2+",
+			wantBoard: StubBoard{squares: []byte(" Q     k ")},
+		},
 	}
 
 	for _, tC := range testCases {
@@ -218,6 +223,10 @@ func (b *StubBoard) MaxRank() rune {
 	m := rune(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
 	log.Printf("MaxRank: %c", m)
 	return m
+}
+
+func (b *StubBoard) Check() bool {
+	return false
 }
 
 func (b *StubBoard) getIndex(addr string) uint8 {

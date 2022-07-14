@@ -8,4 +8,5 @@ type Board interface {
 	String() string
 	MaxFile() rune
 	MaxRank() rune
+	Check() bool
 }

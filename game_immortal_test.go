@@ -15,6 +15,7 @@ func Test(t *testing.T) {
 		move         string
 		wantBoard    string
 		wantCaptured chessgo.Piece
+		wantCheck    bool
 	}{
 		{
 
@@ -37,6 +38,11 @@ func Test(t *testing.T) {
 			move:      "Bc4",
 			wantBoard: "RNBQK NRPPPP  PP          B Pp                  pppp ppprnbqkbnr",
 		},
+		// {
+		// 	move:      "Qh4+",
+		// 	wantBoard: "RNBQK NRPPPP  PP          B Pp q                pppp ppprnb kbnr",
+		// 	wantCheck: true,
+		// },
 	}
 
 	board := chessgo.NewBoard()
@@ -57,6 +63,10 @@ func Test(t *testing.T) {
 
 			if game.Board.String() != tC.wantBoard {
 				t.Fatalf("Want Board %q, got %q", tC.wantBoard, game.Board.String())
+			}
+
+			if game.Board.Check() != tC.wantCheck {
+				t.Fatalf("Wanted Check but Board reports no check.")
 			}
 		})
 	}

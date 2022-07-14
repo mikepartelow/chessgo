@@ -1,15 +1,23 @@
 package chessgo
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type StandardBoard struct {
 	squares []byte
 }
 
 func NewBoard() *StandardBoard {
-	return &StandardBoard{
-		squares: []byte("RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr"),
+	return NewBoardFromString("RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr")
+}
+
+func NewBoardFromString(from string) *StandardBoard {
+	if len(from) != 64 {
+		panic(fmt.Sprintf("Standard Board is 8x8, can't initialize with %d bytes given.", len(from)))
 	}
+	return &StandardBoard{squares: []byte(from)}
 }
 
 func (b *StandardBoard) InBounds(addr string) bool {
@@ -36,6 +44,7 @@ func (b *StandardBoard) SetSquare(addr string, piece Piece) {
 // no bounds checking: panic on out-of-bounds, like a slice would do
 // callers can use Board.InBounds() for error checking
 func (b *StandardBoard) getIndex(addr string) uint8 {
+	log.Printf(" getIndex(%s)", addr)
 	file := 7 - (uint8('h') - addr[0])
 	rank := 7 - (uint8('8') - uint8(addr[1]))
 
@@ -60,4 +69,8 @@ func (b *StandardBoard) MaxFile() rune {
 
 func (b *StandardBoard) MaxRank() rune {
 	return '8'
+}
+
+func (b *StandardBoard) Check() bool {
+	return false
 }
