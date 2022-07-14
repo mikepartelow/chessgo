@@ -126,9 +126,39 @@ func bytePlus(b byte, n int8) byte {
 	return byte(int8(b) + n)
 }
 
+func addrPlus(addr string, incX, incY int8) string {
+	return fmt.Sprintf("%c%c", bytePlus(addr[0], incX), bytePlus(addr[1], incY))
+}
+
 func findBishopSrc(mv *move, g *Game) {
-	if isSrc(mv, byte(uint8(mv.dstFile)-1), byte(uint8(mv.dstRank)-1), g) {
-		return
+	log.Printf("findBishopSrc(%s)", mv.dstAddr)
+	diagonals := []struct {
+		incX int8
+		incY int8
+	}{
+		{
+			-1, -1,
+		},
+		{
+			1, 1,
+		},
+		{
+			1, -1,
+		},
+		{
+			-1, 1,
+		},
+	}
+
+	for _, diag := range diagonals {
+		incX, incY := diag.incX, diag.incY
+		log.Printf(" incX/incY=%d/%d", incX, incY)
+		for addr := addrPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = addrPlus(addr, incX, incY) {
+			if isSrc(mv, addr[0], addr[1], g) {
+				log.Printf("Found at %q", addr)
+				return
+			}
+		}
 	}
 	// other cases not tested
 }

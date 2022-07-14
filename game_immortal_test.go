@@ -33,10 +33,10 @@ func Test(t *testing.T) {
 			move:      "exf4",
 			wantBoard: "RNBQKBNRPPPP  PP            Pp                  pppp ppprnbqkbnr",
 		},
-		// {
-		// 	move:      "Bc4",
-		// 	wantBoard: "RNBQK NRPPPP  PP          B Pp                  pppp ppprnbqkbnr",
-		// },
+		{
+			move:      "Bc4",
+			wantBoard: "RNBQK NRPPPP  PP          B Pp                  pppp ppprnbqkbnr",
+		},
 	}
 
 	board := chessgo.NewBoard()

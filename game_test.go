@@ -114,8 +114,28 @@ func TestGameMove(t *testing.T) {
 		},
 		// todo: disambiguate the move (left diagonal capture) between two possible pawns
 		// todo: disambiguate the move (right diagonal capture) between two possible pawns
-
+		{
+			board:     StubBoard{squares: []byte("B               ")},
+			move:      "Bd4",
+			wantBoard: StubBoard{squares: []byte("               B")},
+		},
+		{
+			board:     StubBoard{squares: []byte("               B")},
+			move:      "Ba1",
+			wantBoard: StubBoard{squares: []byte("B               ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("   B            ")},
+			move:      "Ba4",
+			wantBoard: StubBoard{squares: []byte("            B   ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("            B   ")},
+			move:      "Bd1",
+			wantBoard: StubBoard{squares: []byte("   B            ")},
+		},
 	}
+
 	for _, tC := range testCases {
 		desc := fmt.Sprintf("move %s", tC.move)
 		t.Run(desc, func(t *testing.T) {
@@ -159,7 +179,12 @@ func TestGameMove(t *testing.T) {
 }
 
 func (b *StubBoard) InBounds(addr string) bool {
-	return b.getIndex(addr) < uint8(len(b.squares))
+	file := addr[0]
+	rank := addr[1]
+
+	r := file >= 'a' && rank >= '1' && file <= byte(b.MaxFile()) && rank <= byte(b.MaxRank())
+	log.Printf("InBounds(%s) -> %v", addr, r)
+	return r
 }
 
 func (b *StubBoard) GetSquare(addr string) chessgo.Piece {
@@ -183,7 +208,7 @@ func (b *StubBoard) String() string {
 }
 
 func (b *StubBoard) MaxFile() rune {
-	m := rune(uint8('a') + uint8(math.Sqrt(float64(len(b.squares)))))
+	m := rune(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
 	log.Printf("MaxFile: %c", m)
 	return m
 }
@@ -225,5 +250,8 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 
 	idx := y*uint8(math.Sqrt(float64(len(b.squares)))) + x
 	log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
+	if idx >= uint8(len(b.squares)) {
+		panic("idx >= len(b.squares)")
+	}
 	return idx
 }
