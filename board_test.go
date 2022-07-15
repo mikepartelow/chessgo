@@ -226,18 +226,25 @@ func TestBoardString(t *testing.T) {
 func TestCheck(t *testing.T) {
 	testCases := []struct {
 		boardString string
+		color       chessgo.Color
 		want        bool
 	}{
 		{
 			boardString: "RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr",
+			color:       chessgo.Black,
 			want:        false,
+		},
+		{
+			boardString: "RNBQKBNRPPPPPPPP                                pppppppprnbqkQnr",
+			color:       chessgo.Black,
+			want:        true,
 		},
 	}
 	for idx, tC := range testCases {
 		desc := fmt.Sprintf("Case %d want %v", idx, tC.want)
 		t.Run(desc, func(t *testing.T) {
 			board := chessgo.NewBoardFromString(tC.boardString)
-			got := board.Check()
+			got := board.InCheck(tC.color)
 			if got != tC.want {
 				t.Errorf("got %v wanted %v", got, tC.want)
 			}

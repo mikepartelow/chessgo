@@ -3,7 +3,6 @@ package chessgo
 import (
 	"bytes"
 	"fmt"
-	"log"
 )
 
 type move struct {
@@ -14,6 +13,7 @@ type move struct {
 	piece    Piece
 	replaced Piece
 	capture  bool
+	check    bool
 	error    error
 }
 
@@ -31,8 +31,8 @@ func parseMove(moveStr string, g *Game) (mv move) {
 	case WhitePawn, BlackPawn:
 		findPawnSrc(&mv, g)
 		return
-	case WhiteBishop, BlackBishop:
-		findBishopSrc(&mv, g)
+	case WhiteBishop, BlackBishop, WhiteQueen, BlackQueen:
+		findDiagonalSrc(&mv, g)
 		return
 	default:
 		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
@@ -41,6 +41,11 @@ func parseMove(moveStr string, g *Game) (mv move) {
 
 func parseDst(moveStr string, mv *move, g *Game) error {
 	dstAddrBuf := bytes.Buffer{}
+
+	if moveStr[len(moveStr)-1:] == "+" {
+		mv.check = true
+		moveStr = moveStr[:len(moveStr)-1]
+	}
 
 	for i := len(moveStr) - 1; i >= 0; i-- {
 		if dstAddrBuf.Len() < 2 {
@@ -51,6 +56,8 @@ func parseDst(moveStr string, mv *move, g *Game) error {
 				mv.capture = true
 			case 'B':
 				mv.piece = Bishop(g.Turn)
+			case 'Q':
+				mv.piece = Queen(g.Turn)
 			}
 		}
 	}
@@ -93,7 +100,7 @@ func findPawnSrc(mv *move, g *Game) {
 			return
 		}
 		homeRank := byte('2') // where the white pawn starts the game
-		log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, 2), mv.dstFile)
+		// log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, 2), mv.dstFile)
 		if mv.dstRank == bytePlus(homeRank, 2) && isSrc(mv, mv.dstFile, homeRank, g) {
 			return
 		}
@@ -112,7 +119,7 @@ func findPawnSrc(mv *move, g *Game) {
 			return
 		}
 		homeRank := bytePlus(byte(g.Board.MaxRank()), -1) // where the black pawn starts the game
-		log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, -2), mv.dstFile)
+		// log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, -2), mv.dstFile)
 		if mv.dstRank == bytePlus(homeRank, -2) && isSrc(mv, mv.dstFile, homeRank, g) {
 			return
 		}
@@ -130,8 +137,8 @@ func addrPlus(addr string, incX, incY int8) string {
 	return fmt.Sprintf("%c%c", bytePlus(addr[0], incX), bytePlus(addr[1], incY))
 }
 
-func findBishopSrc(mv *move, g *Game) {
-	log.Printf("findBishopSrc(%s)", mv.dstAddr)
+func findDiagonalSrc(mv *move, g *Game) {
+	// log.Printf("findDiagonalSrc(%s)", mv.dstAddr)
 	diagonals := []struct {
 		incX int8
 		incY int8
@@ -150,12 +157,15 @@ func findBishopSrc(mv *move, g *Game) {
 		},
 	}
 
+	// log.Printf("findDiagonalSrc(%c)", mv.piece)
+
 	for _, diag := range diagonals {
 		incX, incY := diag.incX, diag.incY
-		log.Printf(" incX/incY=%d/%d", incX, incY)
+		// log.Printf(" incX/incY=%d/%d", incX, incY)
 		for addr := addrPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = addrPlus(addr, incX, incY) {
+			// log.Printf("  Checking at %q: %c", addr, g.Board.GetSquare(addr))
 			if isSrc(mv, addr[0], addr[1], g) {
-				log.Printf("Found at %q", addr)
+				// log.Printf("Found at %q", addr)
 				return
 			}
 		}

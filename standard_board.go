@@ -2,7 +2,6 @@ package chessgo
 
 import (
 	"fmt"
-	"log"
 )
 
 type StandardBoard struct {
@@ -44,7 +43,7 @@ func (b *StandardBoard) SetSquare(addr string, piece Piece) {
 // no bounds checking: panic on out-of-bounds, like a slice would do
 // callers can use Board.InBounds() for error checking
 func (b *StandardBoard) getIndex(addr string) uint8 {
-	log.Printf(" getIndex(%s)", addr)
+	// log.Printf(" getIndex(%s)", addr)
 	file := 7 - (uint8('h') - addr[0])
 	rank := 7 - (uint8('8') - uint8(addr[1]))
 
@@ -71,6 +70,38 @@ func (b *StandardBoard) MaxRank() rune {
 	return '8'
 }
 
-func (b *StandardBoard) Check() bool {
+func (b *StandardBoard) InCheck(color Color) bool {
+	addr := b.findKing(color)
+	// todo: color.Opponent()
+	opponentQueen := Queen(ToggleColor(color))
+
+	// todo: refactor this and move.addrPlus into an address lib
+	file, rank := addr[0], addr[1]
+
+	for i := 0; i < 7; i++ {
+		queenAddr := fmt.Sprintf("%c%c", file+1, rank)
+		if !b.InBounds(queenAddr) {
+			break
+		}
+		if b.GetSquare(queenAddr) == opponentQueen {
+			return true
+		}
+	}
+
 	return false
+}
+
+func (b *StandardBoard) findKing(color Color) (addr string) {
+	wantedKing := King(color)
+
+	for i := uint8(0); i < 8; i++ {
+		for j := uint8(0); j < 8; j++ {
+			addr = fmt.Sprintf("%c%c", 'a'+i, '1'+j)
+			if b.GetSquare(addr) == wantedKing {
+				return
+			}
+		}
+	}
+
+	panic(fmt.Sprintf("Missing %s King!", color.String()))
 }

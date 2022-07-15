@@ -2,7 +2,6 @@ package chessgo_test
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"mp/chessgo"
 	"reflect"
@@ -136,19 +135,19 @@ func TestGameMove(t *testing.T) {
 		},
 		{
 			board:     StubBoard{squares: []byte("Q      k ")},
-			move:      "Qa2+",
-			wantBoard: StubBoard{squares: []byte(" Q     k ")},
+			move:      "Qc3+",
+			wantBoard: StubBoard{squares: []byte("       kQ")},
 		},
 	}
 
 	for _, tC := range testCases {
-		desc := fmt.Sprintf("move %s", tC.move)
+		desc := fmt.Sprintf("move %s / %s", tC.move, tC.turn.String())
 		t.Run(desc, func(t *testing.T) {
 			g := chessgo.Game{Board: &tC.board, Turn: tC.turn}
 			captured, err := g.Move(tC.move)
 
 			if err != tC.wantErr {
-				t.Errorf("got err %v wanted %v", err, tC.wantErr)
+				t.Errorf("got err %T/%v wanted %v", err, err, tC.wantErr)
 			}
 
 			if !reflect.DeepEqual(g.Board, &tC.wantBoard) {
@@ -188,7 +187,7 @@ func (b *StubBoard) InBounds(addr string) bool {
 	rank := addr[1]
 
 	r := file >= 'a' && rank >= '1' && file <= byte(b.MaxFile()) && rank <= byte(b.MaxRank())
-	log.Printf("InBounds(%s) -> %v", addr, r)
+	// log.Printf("InBounds(%s) -> %v", addr, r)
 	return r
 }
 
@@ -202,7 +201,7 @@ func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
 
 func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
 	captured := b.GetSquare(dstAddr)
-	log.Printf("Moving %q (%d) to %q (%d)", srcAddr, b.getIndex(srcAddr), dstAddr, b.getIndex(dstAddr))
+	// log.Printf("Moving %q (%d) to %q (%d)", srcAddr, b.getIndex(srcAddr), dstAddr, b.getIndex(dstAddr))
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
 	b.SetSquare(srcAddr, chessgo.NoPiece)
 	return captured
@@ -214,18 +213,18 @@ func (b *StubBoard) String() string {
 
 func (b *StubBoard) MaxFile() rune {
 	m := rune(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
-	log.Printf("MaxFile: %c", m)
+	// log.Printf("MaxFile: %c", m)
 	return m
 }
 
 func (b *StubBoard) MaxRank() rune {
-	log.Printf("MaxRank: len(squares): %d", len(b.squares))
+	// log.Printf("MaxRank: len(squares): %d", len(b.squares))
 	m := rune(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
-	log.Printf("MaxRank: %c", m)
+	// log.Printf("MaxRank: %c", m)
 	return m
 }
 
-func (b *StubBoard) Check() bool {
+func (b *StubBoard) InCheck(color chessgo.Color) bool {
 	return false
 }
 
@@ -258,7 +257,7 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 	}
 
 	idx := y*uint8(math.Sqrt(float64(len(b.squares)))) + x
-	log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
+	// log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
 	if idx >= uint8(len(b.squares)) {
 		panic("idx >= len(b.squares)")
 	}
