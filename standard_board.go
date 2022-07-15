@@ -2,6 +2,7 @@ package chessgo
 
 import (
 	"fmt"
+	"log"
 )
 
 type StandardBoard struct {
@@ -24,7 +25,7 @@ func (b *StandardBoard) InBounds(addr string) bool {
 		return false
 	}
 	index := b.getIndex(addr)
-	return index <= uint8(len(b.squares))
+	return index < uint8(len(b.squares))
 }
 
 func (b *StandardBoard) GetSquare(addr string) Piece {
@@ -71,15 +72,13 @@ func (b *StandardBoard) MaxRank() rune {
 }
 
 func (b *StandardBoard) InCheck(color Color) bool {
-	addr := b.findKing(color)
+	kingAddr := b.findKing(color)
 	// todo: color.Opponent()
 	opponentQueen := Queen(ToggleColor(color))
 
-	// todo: refactor this and move.addrPlus into an address lib
-	file, rank := addr[0], addr[1]
-
-	for i := 0; i < 7; i++ {
-		queenAddr := fmt.Sprintf("%c%c", file+1, rank)
+	for i := int8(1); i < 7; i++ {
+		queenAddr := AddressPlus(kingAddr, i, 0)
+		log.Printf("queenAddr: %s", queenAddr)
 		if !b.InBounds(queenAddr) {
 			break
 		}

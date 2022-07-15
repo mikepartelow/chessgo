@@ -129,14 +129,6 @@ func findPawnSrc(mv *move, g *Game) {
 	}
 }
 
-func bytePlus(b byte, n int8) byte {
-	return byte(int8(b) + n)
-}
-
-func addrPlus(addr string, incX, incY int8) string {
-	return fmt.Sprintf("%c%c", bytePlus(addr[0], incX), bytePlus(addr[1], incY))
-}
-
 func findDiagonalSrc(mv *move, g *Game) {
 	// log.Printf("findDiagonalSrc(%s)", mv.dstAddr)
 	diagonals := []struct {
@@ -162,7 +154,7 @@ func findDiagonalSrc(mv *move, g *Game) {
 	for _, diag := range diagonals {
 		incX, incY := diag.incX, diag.incY
 		// log.Printf(" incX/incY=%d/%d", incX, incY)
-		for addr := addrPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = addrPlus(addr, incX, incY) {
+		for addr := AddressPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
 			// log.Printf("  Checking at %q: %c", addr, g.Board.GetSquare(addr))
 			if isSrc(mv, addr[0], addr[1], g) {
 				// log.Printf("Found at %q", addr)
