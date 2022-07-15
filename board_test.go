@@ -239,7 +239,13 @@ func TestCheck(t *testing.T) {
 			color:       chessgo.Black,
 			want:        true,
 		},
+		{
+			boardString: "RNBQKBNRPPPPPPPP                                pppppQpprnbqkbnr",
+			color:       chessgo.Black,
+			want:        true,
+		},
 	}
+
 	for idx, tC := range testCases {
 		desc := fmt.Sprintf("Case %d want %v", idx, tC.want)
 		t.Run(desc, func(t *testing.T) {

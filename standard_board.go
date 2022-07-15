@@ -2,7 +2,6 @@ package chessgo
 
 import (
 	"fmt"
-	"log"
 )
 
 type StandardBoard struct {
@@ -73,18 +72,13 @@ func (b *StandardBoard) MaxRank() rune {
 
 func (b *StandardBoard) InCheck(color Color) bool {
 	kingAddr := b.findKing(color)
-	// todo: color.Opponent()
-	opponentQueen := Queen(ToggleColor(color))
 
-	for i := int8(1); i < 7; i++ {
-		queenAddr := AddressPlus(kingAddr, i, 0)
-		log.Printf("queenAddr: %s", queenAddr)
-		if !b.InBounds(queenAddr) {
-			break
-		}
-		if b.GetSquare(queenAddr) == opponentQueen {
-			return true
-		}
+	if b.inCheckHorizontal(kingAddr, Queen(ToggleColor(color))) {
+		return true
+	}
+
+	if b.inCheckDiagonal(kingAddr, Queen(ToggleColor(color))) {
+		return true
 	}
 
 	return false
@@ -103,4 +97,58 @@ func (b *StandardBoard) findKing(color Color) (addr string) {
 	}
 
 	panic(fmt.Sprintf("Missing %s King!", color.String()))
+}
+
+func (b *StandardBoard) inCheckHorizontal(kingAddr string, opponent Piece) bool {
+	increments := []struct {
+		incX int8
+		incY int8
+	}{
+		{-1, 0}, {1, 0}, {0, -1}, {0, 1},
+	}
+
+	for _, incs := range increments {
+		incX, incY := incs.incX, incs.incY
+		for i, j := incX, incY; i > -7 && i < 8 && j > -7 && j < 8; i, j = i+incX, j+incY {
+			addr := AddressPlus(kingAddr, i, j)
+			if !b.InBounds(addr) {
+				break
+			}
+			piece := b.GetSquare(addr)
+			if piece == opponent {
+				return true
+			} else if piece != NoPiece {
+				break
+			}
+		}
+	}
+
+	return false
+}
+
+func (b *StandardBoard) inCheckDiagonal(kingAddr string, opponent Piece) bool {
+	increments := []struct {
+		incX int8
+		incY int8
+	}{
+		{-1, -1}, {1, 1}, {1, -1}, {-1, 1},
+	}
+
+	for _, incs := range increments {
+		incX, incY := incs.incX, incs.incY
+		for i, j := incX, incY; i > -7 && i < 8 && j > -7 && j < 8; i, j = i+incX, j+incY {
+			addr := AddressPlus(kingAddr, i, j)
+			if !b.InBounds(addr) {
+				break
+			}
+			piece := b.GetSquare(addr)
+			if piece == opponent {
+				return true
+			} else if piece != NoPiece {
+				break
+			}
+		}
+	}
+
+	return false
 }

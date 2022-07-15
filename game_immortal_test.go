@@ -65,10 +65,9 @@ func Test(t *testing.T) {
 				t.Fatalf("Want Board %q, got %q", tC.wantBoard, game.Board.String())
 			}
 
-			// todo: enable this
-			// if game.Board.Check() != tC.wantCheck {
-			// 	t.Fatalf("Wanted Check but Board reports no check.")
-			// }
+			if game.Board.InCheck(game.Turn) != tC.wantCheck {
+				t.Fatalf("Wanted Check but Board reports no check.")
+			}
 		})
 	}
 }

@@ -130,23 +130,11 @@ func findPawnSrc(mv *move, g *Game) {
 }
 
 func findDiagonalSrc(mv *move, g *Game) {
-	// log.Printf("findDiagonalSrc(%s)", mv.dstAddr)
 	diagonals := []struct {
 		incX int8
 		incY int8
 	}{
-		{
-			-1, -1,
-		},
-		{
-			1, 1,
-		},
-		{
-			1, -1,
-		},
-		{
-			-1, 1,
-		},
+		{-1, -1}, {1, 1}, {1, -1}, {-1, 1},
 	}
 
 	// log.Printf("findDiagonalSrc(%c)", mv.piece)
@@ -162,5 +150,4 @@ func findDiagonalSrc(mv *move, g *Game) {
 			}
 		}
 	}
-	// other cases not tested
 }
