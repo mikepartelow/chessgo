@@ -138,6 +138,22 @@ func TestGameMove(t *testing.T) {
 			move:      "Qc3+",
 			wantBoard: StubBoard{squares: []byte("       kQ")},
 		},
+		{
+			board:     StubBoard{squares: []byte("K   ")},
+			move:      "Kb1",
+			wantBoard: StubBoard{squares: []byte(" K  ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("   k")},
+			turn:      chessgo.Black,
+			move:      "Kb1",
+			wantBoard: StubBoard{squares: []byte(" k  ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("K   ")},
+			move:      "Kb2",
+			wantBoard: StubBoard{squares: []byte("   K")},
+		},
 	}
 
 	for _, tC := range testCases {

@@ -34,6 +34,9 @@ func parseMove(moveStr string, g *Game) (mv move) {
 	case WhiteBishop, BlackBishop, WhiteQueen, BlackQueen:
 		findDiagonalSrc(&mv, g)
 		return
+	case WhiteKing, BlackKing:
+		findKingSrc(&mv, g)
+		return
 	default:
 		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
 	}
@@ -58,6 +61,8 @@ func parseDst(moveStr string, mv *move, g *Game) error {
 				mv.piece = Bishop(g.Turn)
 			case 'Q':
 				mv.piece = Queen(g.Turn)
+			case 'K':
+				mv.piece = King(g.Turn)
 			}
 		}
 	}
@@ -148,6 +153,21 @@ func findDiagonalSrc(mv *move, g *Game) {
 				// log.Printf("Found at %q", addr)
 				return
 			}
+		}
+	}
+}
+
+func findKingSrc(mv *move, g *Game) {
+	offsets := []struct {
+		incX, incY int8
+	}{
+		{-1, -1}, {-1, 0}, {0, -1}, {-1, 1}, {1, -1}, {1, 0}, {1, 1}, {0, 1},
+	}
+
+	for _, offs := range offsets {
+		addr := AddressPlus(mv.dstAddr, offs.incX, offs.incY)
+		if g.Board.InBounds(addr) && isSrc(mv, addr[0], addr[1], g) {
+			return
 		}
 	}
 }
