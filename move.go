@@ -32,8 +32,14 @@ func parseMove(moveStr string, g *Game) (mv move) {
 	case WhitePawn, BlackPawn:
 		findPawnSrc(&mv, g)
 		return
-	case WhiteBishop, BlackBishop, WhiteQueen, BlackQueen:
+	case WhiteBishop, BlackBishop:
 		findDiagonalSrc(&mv, g)
+		return
+	case WhiteQueen, BlackQueen:
+		findDiagonalSrc(&mv, g)
+		if mv.srcAddr == "" {
+			findHorizontalSrc(&mv, g)
+		}
 		return
 	case WhiteKing, BlackKing:
 		findKingSrc(&mv, g)
@@ -157,6 +163,24 @@ func findDiagonalSrc(mv *move, g *Game) {
 			// log.Printf("  Checking at %q: %c", addr, g.Board.GetSquare(addr))
 			if isSrc(mv, addr[0], addr[1], g) {
 				// log.Printf("Found at %q", addr)
+				return
+			}
+		}
+	}
+}
+
+func findHorizontalSrc(mv *move, g *Game) {
+	horizontals := []struct {
+		incX int8
+		incY int8
+	}{
+		{-1, 0}, {1, 0}, {0, -1}, {0, 1},
+	}
+
+	for _, horiz := range horizontals {
+		incX, incY := horiz.incX, horiz.incY
+		for addr := AddressPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
+			if isSrc(mv, addr[0], addr[1], g) {
 				return
 			}
 		}
