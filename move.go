@@ -3,6 +3,7 @@ package chessgo
 import (
 	"bytes"
 	"fmt"
+	"log"
 )
 
 type move struct {
@@ -37,6 +38,9 @@ func parseMove(moveStr string, g *Game) (mv move) {
 	case WhiteKing, BlackKing:
 		findKingSrc(&mv, g)
 		return
+	case WhiteKnight, BlackKnight:
+		findKnightSrc(&mv, g)
+		return
 	default:
 		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
 	}
@@ -63,6 +67,8 @@ func parseDst(moveStr string, mv *move, g *Game) error {
 				mv.piece = Queen(g.Turn)
 			case 'K':
 				mv.piece = King(g.Turn)
+			case 'N':
+				mv.piece = Knight(g.Turn)
 			}
 		}
 	}
@@ -167,6 +173,23 @@ func findKingSrc(mv *move, g *Game) {
 	for _, offs := range offsets {
 		addr := AddressPlus(mv.dstAddr, offs.incX, offs.incY)
 		if g.Board.InBounds(addr) && isSrc(mv, addr[0], addr[1], g) {
+			return
+		}
+	}
+}
+
+func findKnightSrc(mv *move, g *Game) {
+	offsets := []struct {
+		incX, incY int8
+	}{
+		{-1, -2}, {-2, -1}, {1, -2}, {2, -1}, {1, 2}, {2, 1}, {-1, 2}, {-2, 1},
+	}
+
+	for _, offs := range offsets {
+		addr := AddressPlus(mv.dstAddr, offs.incX, offs.incY)
+		log.Printf("Trying %q", addr)
+		if g.Board.InBounds(addr) && isSrc(mv, addr[0], addr[1], g) {
+			log.Printf("Found at %q", addr)
 			return
 		}
 	}

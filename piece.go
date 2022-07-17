@@ -89,6 +89,17 @@ func King(color Color) Piece {
 	}
 }
 
+func Knight(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteKnight
+	case Black:
+		return BlackKnight
+	default:
+		panic("Invalid color")
+	}
+}
+
 func validPiece(p Piece) bool {
 	switch p {
 	case NoPiece,

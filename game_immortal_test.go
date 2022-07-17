@@ -55,10 +55,10 @@ func Test(t *testing.T) {
 			move:      "Bxb5",
 			wantBoard: "RNBQ KNRPPPP  PP            Pp q B              p pp ppprnb kbnr",
 		},
-		// {
-		// 	move:      "Nf6",
-		// 	wantBoard: "RNBQ KNRPPPP  PP            Pp q B           n  p pp ppprnb kb r",
-		// },
+		{
+			move:      "Nf6",
+			wantBoard: "RNBQ KNRPPPP  PP            Pp q B           n  p pp ppprnb kb r",
+		},
 	}
 
 	board := chessgo.NewBoard()
