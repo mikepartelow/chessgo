@@ -9,16 +9,6 @@ import (
 	"testing"
 )
 
-// todo: this is an integration test!
-
-// func TestGame(t *testing.T) {
-// 	g := chessgo.NewGame()
-// 	assertSquare(t, g.Board(), "e2", 'P')
-
-// 	// g.Move("e4")
-// 	// assertSquare(t, g.Board().Square("e4"), 'P')
-// }
-
 type StubBoard struct {
 	squares []byte
 }
@@ -243,26 +233,24 @@ func TestGameMove(t *testing.T) {
 
 }
 
-func (b *StubBoard) InBounds(addr string) bool {
+func (b *StubBoard) InBounds(addr chessgo.Address) bool {
 	file := addr[0]
 	rank := addr[1]
 
 	r := file >= 'a' && rank >= '1' && file <= byte(b.MaxFile()) && rank <= byte(b.MaxRank())
-	// log.Printf("InBounds(%s) -> %v", addr, r)
 	return r
 }
 
-func (b *StubBoard) GetSquare(addr string) chessgo.Piece {
+func (b *StubBoard) GetSquare(addr chessgo.Address) chessgo.Piece {
 	return chessgo.Piece(b.squares[b.getIndex(addr)])
 }
 
-func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
+func (b *StubBoard) SetSquare(addr chessgo.Address, piece chessgo.Piece) {
 	b.squares[b.getIndex(addr)] = byte(piece)
 }
 
-func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
+func (b *StubBoard) Move(srcAddr, dstAddr chessgo.Address) chessgo.Piece {
 	captured := b.GetSquare(dstAddr)
-	// log.Printf("Moving %q (%d) to %q (%d)", srcAddr, b.getIndex(srcAddr), dstAddr, b.getIndex(dstAddr))
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
 	b.SetSquare(srcAddr, chessgo.NoPiece)
 	return captured
@@ -274,14 +262,11 @@ func (b *StubBoard) String() string {
 
 func (b *StubBoard) MaxFile() rune {
 	m := rune(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
-	// log.Printf("MaxFile: %c", m)
 	return m
 }
 
 func (b *StubBoard) MaxRank() rune {
-	// log.Printf("MaxRank: len(squares): %d", len(b.squares))
 	m := rune(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
-	// log.Printf("MaxRank: %c", m)
 	return m
 }
 
@@ -293,7 +278,7 @@ func (b *StubBoard) Mated(color chessgo.Color) bool {
 	return false
 }
 
-func (b *StubBoard) getIndex(addr string) uint8 {
+func (b *StubBoard) getIndex(addr chessgo.Address) uint8 {
 	file := addr[0]
 	rank := addr[1]
 
@@ -322,7 +307,6 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 	}
 
 	idx := y*uint8(math.Sqrt(float64(len(b.squares)))) + x
-	// log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
 	if idx >= uint8(len(b.squares)) {
 		panic("idx >= len(b.squares)")
 	}

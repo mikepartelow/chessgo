@@ -1,10 +1,10 @@
 package chessgo
 
 type Board interface {
-	InBounds(addr string) bool
-	GetSquare(addr string) Piece
-	SetSquare(addr string, piece Piece)
-	Move(srcAddr, dstAddr string) Piece
+	InBounds(addr Address) bool
+	GetSquare(addr Address) Piece
+	SetSquare(addr Address, piece Piece)
+	Move(srcAddr, dstAddr Address) Piece
 	String() string
 	MaxFile() rune
 	MaxRank() rune

@@ -4,9 +4,9 @@ type increments struct {
 	incX, incY int8
 }
 
-func findKnightSrc(dstAddr string, piece Piece, board Board) string {
+func findKnightSrc(dstAddr Address, piece Piece, board Board) Address {
 	for _, offs := range []increments{{-1, -2}, {-2, -1}, {1, -2}, {2, -1}, {1, 2}, {2, 1}, {-1, 2}, {-2, 1}} {
-		addr := addressPlus(dstAddr, offs.incX, offs.incY)
+		addr := dstAddr.Plus(offs.incX, offs.incY)
 		if board.InBounds(addr) && board.GetSquare(addr) == piece {
 			return addr
 		}
@@ -15,15 +15,15 @@ func findKnightSrc(dstAddr string, piece Piece, board Board) string {
 	return ""
 }
 
-func findDiagonalSrc(dstAddr string, piece Piece, board Board) string {
+func findDiagonalSrc(dstAddr Address, piece Piece, board Board) Address {
 	return findSrcOnLines(dstAddr, piece, board, []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}})
 }
 
-func findHorizontalSrc(dstAddr string, piece Piece, board Board) string {
+func findHorizontalSrc(dstAddr Address, piece Piece, board Board) Address {
 	return findSrcOnLines(dstAddr, piece, board, []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}})
 }
 
-func findSrcOnLines(dstAddr string, piece Piece, board Board, incs []increments) string {
+func findSrcOnLines(dstAddr Address, piece Piece, board Board, incs []increments) Address {
 	for _, incs := range incs {
 		if srcAddr := findSrcOnLine(dstAddr, piece, board, incs.incX, incs.incY); srcAddr != "" {
 			return srcAddr
@@ -33,8 +33,8 @@ func findSrcOnLines(dstAddr string, piece Piece, board Board, incs []increments)
 	return ""
 }
 
-func findSrcOnLine(dstAddr string, piece Piece, board Board, incX, incY int8) string {
-	for addr := addressPlus(dstAddr, incX, incY); board.InBounds(addr); addr = addressPlus(addr, incX, incY) {
+func findSrcOnLine(dstAddr Address, piece Piece, board Board, incX, incY int8) Address {
+	for addr := dstAddr.Plus(incX, incY); board.InBounds(addr); addr = addr.Plus(incX, incY) {
 		switch board.GetSquare(addr) {
 		case piece:
 			return addr
@@ -48,9 +48,9 @@ func findSrcOnLine(dstAddr string, piece Piece, board Board, incX, incY int8) st
 	return ""
 }
 
-func findKingSrc(dstAddr string, piece Piece, board Board) string {
+func findKingSrc(dstAddr Address, piece Piece, board Board) Address {
 	for _, offs := range []increments{{-1, -1}, {-1, 0}, {0, -1}, {-1, 1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}} {
-		addr := addressPlus(dstAddr, offs.incX, offs.incY)
+		addr := dstAddr.Plus(offs.incX, offs.incY)
 		if board.InBounds(addr) && board.GetSquare(addr) == piece {
 			return addr
 		}

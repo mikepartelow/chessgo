@@ -7,8 +7,8 @@ import (
 
 type MoveInfo struct {
 	piece         Piece
-	dstAddr       string
-	srcAddr       string
+	dstAddr       Address
+	srcAddr       Address
 	captured      Piece
 	expectCapture bool
 	check         bool
@@ -78,8 +78,8 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 	return &mi, nil
 }
 
-func findSrc(mi MoveInfo, g Game) (string, error) {
-	var srcAddr string
+func findSrc(mi MoveInfo, g Game) (Address, error) {
+	var srcAddr Address
 
 	switch mi.piece {
 	case WhitePawn, BlackPawn:
@@ -108,8 +108,8 @@ func findSrc(mi MoveInfo, g Game) (string, error) {
 	return srcAddr, nil
 }
 
-func findPawnSrc(mi MoveInfo, g Game) (string, error) {
-	isSrc := func(mi MoveInfo, addr string, g Game) bool {
+func findPawnSrc(mi MoveInfo, g Game) (Address, error) {
+	isSrc := func(mi MoveInfo, addr Address, g Game) bool {
 		return g.Board.InBounds(addr) && g.Board.GetSquare(addr) == mi.piece
 	}
 
@@ -117,7 +117,7 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 	case WhitePawn:
 		if mi.expectCapture {
 			for _, incs := range []increments{{-1, -1}, {1, -1}} {
-				addr := addressPlus(mi.dstAddr, incs.incX, incs.incY)
+				addr := mi.dstAddr.Plus(incs.incX, incs.incY)
 				if isSrc(mi, addr, g) {
 					return addr, nil
 				}
@@ -125,20 +125,20 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		addr := addressPlus(mi.dstAddr, 0, -1)
+		addr := mi.dstAddr.Plus(0, -1)
 		if isSrc(mi, addr, g) {
 			return addr, nil
 		}
 
 		// first White pawn move can be 2 squares starting from rank 2
-		addr = NewAddress(AddressFile(mi.dstAddr), '2')
-		if AddressRank(mi.dstAddr) == '4' && isSrc(mi, addr, g) {
+		addr = NewAddress(mi.dstAddr.File(), '2')
+		if mi.dstAddr.Rank() == '4' && isSrc(mi, addr, g) {
 			return addr, nil
 		}
 	case BlackPawn:
 		if mi.expectCapture {
 			for _, incs := range []increments{{1, 1}, {-1, 1}} {
-				addr := addressPlus(mi.dstAddr, incs.incX, incs.incY)
+				addr := mi.dstAddr.Plus(incs.incX, incs.incY)
 				if isSrc(mi, addr, g) {
 					return addr, nil
 				}
@@ -146,14 +146,14 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		addr := addressPlus(mi.dstAddr, 0, 1)
+		addr := mi.dstAddr.Plus(0, 1)
 		if isSrc(mi, addr, g) {
 			return addr, nil
 		}
 
 		// first Black pawn move can be 2 squares starting from Board.MaxRank() - 1
-		addr = NewAddress(AddressFile(mi.dstAddr), byte(g.Board.MaxRank())-1)
-		if AddressRank(mi.dstAddr) == byte(g.Board.MaxRank()-3) && isSrc(mi, addr, g) {
+		addr = NewAddress(mi.dstAddr.File(), byte(g.Board.MaxRank())-1)
+		if mi.dstAddr.Rank() == byte(g.Board.MaxRank()-3) && isSrc(mi, addr, g) {
 			return addr, nil
 		}
 	}

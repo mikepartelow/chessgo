@@ -14,7 +14,7 @@ func TestNewBoard(t *testing.T) {
 
 	for _, file := range files {
 		for _, rank := range ranks {
-			addr := fmt.Sprintf("%c%c", file, rank)
+			addr := chessgo.NewAddress(byte(file), byte(rank))
 			want := defaultPiece(rank, file)
 			assertSquare(t, b, addr, want)
 		}
@@ -25,7 +25,7 @@ func TestInBounds(t *testing.T) {
 	b := chessgo.NewBoard()
 
 	testCases := []struct {
-		addr string
+		addr chessgo.Address
 		want bool
 	}{
 		{
@@ -53,7 +53,7 @@ func TestInBounds(t *testing.T) {
 			want: false,
 		},
 		{
-			addr: fmt.Sprintf("%c1", rune(uint8('a')-1)),
+			addr: chessgo.NewAddress(uint8('a')-1, 1),
 			want: false,
 		},
 	}
@@ -73,7 +73,7 @@ func TestGetSquare(t *testing.T) {
 	b := chessgo.NewBoard()
 
 	testCases := []struct {
-		addr string
+		addr chessgo.Address
 		want chessgo.Piece
 	}{
 		{
@@ -106,7 +106,7 @@ func TestSetSquare(t *testing.T) {
 	b := chessgo.NewBoard()
 
 	t.Run("sets square contents", func(t *testing.T) {
-		addr := "d5"
+		addr := chessgo.NewAddress('d', '5')
 		want := chessgo.BlackKnight
 		b.SetSquare(addr, want)
 
@@ -143,8 +143,8 @@ func TestSetSquare(t *testing.T) {
 
 func TestBoardMove(t *testing.T) {
 	testCases := []struct {
-		srcAddr  string
-		dstAddr  string
+		srcAddr  chessgo.Address
+		dstAddr  chessgo.Address
 		replaced chessgo.Piece
 	}{
 		{
@@ -268,7 +268,7 @@ func TestCheck(t *testing.T) {
 	}
 }
 
-func assertSquare(t testing.TB, board chessgo.Board, addr string, want chessgo.Piece) {
+func assertSquare(t testing.TB, board chessgo.Board, addr chessgo.Address, want chessgo.Piece) {
 	t.Helper()
 	got := board.GetSquare(addr)
 	if got != want {
