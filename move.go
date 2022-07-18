@@ -65,7 +65,7 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 		}
 	}
 
-	mi.dstAddr = fmt.Sprintf("%c%c", dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0])
+	mi.dstAddr = NewAddress(dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0])
 	mi.captured = g.Board.GetSquare(mi.dstAddr)
 
 	if mi.captured != NoPiece && ColorOf(mi.captured) == g.Turn {
@@ -165,15 +165,21 @@ func findDiagonalSrc(mi MoveInfo, g Game) (string, error) {
 	}
 
 	return "", fmt.Errorf("couldn't find a diagonal source for %s", mi.dstAddr)
-
 }
 
 func findHorizontalSrc(mi MoveInfo, g Game) (string, error) {
-	for _, horiz := range []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
-		incX, incY := horiz.incX, horiz.incY
+	for _, incs := range []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+		incX, incY := incs.incX, incs.incY
+	MoveLine:
 		for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
-			if isSrc(mi, addr, g) {
+			switch g.Board.GetSquare(addr) {
+			case mi.piece:
 				return addr, nil
+			case NoPiece:
+				continue
+			default:
+				// move is blocked by some piece
+				break MoveLine
 			}
 		}
 	}

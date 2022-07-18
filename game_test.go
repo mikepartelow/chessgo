@@ -194,12 +194,11 @@ func TestGameMove(t *testing.T) {
 			move:      "Ra3",
 			wantBoard: StubBoard{squares: []byte("      R  ")},
 		},
-		// {
-		// 	board:     StubBoard{squares: []byte("RP R             ")},
-		// 	move:      "Rc1",
-		// 	wantBoard: StubBoard{squares: []byte("RPR             ")},
-		// },
-
+		{
+			board:     StubBoard{squares: []byte("RP R             ")},
+			move:      "Rc1",
+			wantBoard: StubBoard{squares: []byte("RPR              ")},
+		},
 	}
 
 	for _, tC := range testCases {
