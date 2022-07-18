@@ -3,218 +3,198 @@ package chessgo
 import (
 	"bytes"
 	"fmt"
-	"log"
 )
 
-type move struct {
-	srcAddr  string
-	dstFile  byte
-	dstRank  byte
-	dstAddr  string
-	piece    Piece
-	replaced Piece
-	capture  bool
-	check    bool
-	error    error
+type MoveInfo struct {
+	piece         Piece
+	dstAddr       string
+	srcAddr       string
+	captured      Piece
+	expectCapture bool
+	check         bool
 }
 
-func parseMove(moveStr string, g *Game) (mv move) {
-	mv.piece = Pawn(g.Turn)
-	mv.replaced = NoPiece
-
-	if err := parseDst(moveStr, &mv, g); err != nil {
-		return
-	}
-
-	// log.Printf("Moving %c to %s", mv.piece, mv.dstAddr)
-
-	switch mv.piece {
-	case WhitePawn, BlackPawn:
-		findPawnSrc(&mv, g)
-		return
-	case WhiteBishop, BlackBishop:
-		findDiagonalSrc(&mv, g)
-		return
-	case WhiteQueen, BlackQueen:
-		findDiagonalSrc(&mv, g)
-		if mv.srcAddr == "" {
-			findHorizontalSrc(&mv, g)
-		}
-		return
-	case WhiteKing, BlackKing:
-		findKingSrc(&mv, g)
-		return
-	case WhiteKnight, BlackKnight:
-		findKnightSrc(&mv, g)
-		return
-	default:
-		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
-	}
+type increments struct {
+	incX, incY int8
 }
 
-func parseDst(moveStr string, mv *move, g *Game) error {
+func parseMove(move string, g Game) (*MoveInfo, error) {
+	mi, err := parseDst(move, g)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse dst from %q: %v", move, err)
+	}
+
+	// todo: *yuck
+	src, err := findSrc(*mi, g)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't find src for %q: %v", move, err)
+	}
+
+	mi.srcAddr = src
+	return mi, nil
+}
+
+func parseDst(move string, g Game) (*MoveInfo, error) {
+	mi := MoveInfo{piece: Pawn(g.Turn), captured: NoPiece}
+
 	dstAddrBuf := bytes.Buffer{}
 
-	if moveStr[len(moveStr)-1:] == "+" {
-		mv.check = true
-		moveStr = moveStr[:len(moveStr)-1]
+	if move[len(move)-1:] == "+" {
+		mi.check = true
+		move = move[:len(move)-1]
 	}
 
-	for i := len(moveStr) - 1; i >= 0; i-- {
+	for i := len(move) - 1; i >= 0; i-- {
 		if dstAddrBuf.Len() < 2 {
-			dstAddrBuf.WriteByte(moveStr[i])
+			dstAddrBuf.WriteByte(move[i])
 		} else {
-			switch moveStr[i] {
+			switch move[i] {
 			case 'x':
-				mv.capture = true
+				mi.expectCapture = true
 			case 'B':
-				mv.piece = Bishop(g.Turn)
+				mi.piece = Bishop(g.Turn)
 			case 'Q':
-				mv.piece = Queen(g.Turn)
+				mi.piece = Queen(g.Turn)
 			case 'K':
-				mv.piece = King(g.Turn)
+				mi.piece = King(g.Turn)
 			case 'N':
-				mv.piece = Knight(g.Turn)
+				mi.piece = Knight(g.Turn)
 			}
 		}
 	}
 
-	mv.dstFile, mv.dstRank = dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0]
+	mi.dstAddr = fmt.Sprintf("%c%c", dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0])
+	mi.captured = g.Board.GetSquare(mi.dstAddr)
 
-	mv.dstAddr = fmt.Sprintf("%c%c", mv.dstFile, mv.dstRank)
-	mv.replaced = g.Board.GetSquare(mv.dstAddr)
-
-	if mv.replaced != NoPiece && ColorOf(mv.replaced) == g.Turn {
-		mv.error = ErrorFriendlyFire{}
+	if mi.captured != NoPiece && ColorOf(mi.captured) == g.Turn {
+		return nil, fmt.Errorf("attempt to capture own piece at %q with %c", mi.dstAddr, mi.piece)
 	}
 
-	return mv.error
+	return &mi, nil
 }
 
-func isSrc(mv *move, file, rank byte, g *Game) bool {
-	srcAddr := fmt.Sprintf("%c%c", file, rank)
-	if g.Board.InBounds(srcAddr) && g.Board.GetSquare(srcAddr) == mv.piece {
-		mv.srcAddr = srcAddr
+func findSrc(mi MoveInfo, g Game) (string, error) {
+	switch mi.piece {
+	case WhitePawn, BlackPawn:
+		return findPawnSrc(mi, g)
+	case WhiteBishop, BlackBishop:
+		return findDiagonalSrc(mi, g)
+	case WhiteQueen, BlackQueen:
+		src, err := findDiagonalSrc(mi, g)
+		if err != nil {
+			return findHorizontalSrc(mi, g)
+		}
+		return src, nil
+	case WhiteKing, BlackKing:
+		return findKingSrc(mi, g)
+	case WhiteKnight, BlackKnight:
+		return findKnightSrc(mi, g)
+	default:
+		return "", fmt.Errorf("unhandled Piece: %c", mi.piece)
+	}
+}
+
+func isSrc(mi MoveInfo, srcAddr string, g Game) bool {
+	if g.Board.InBounds(srcAddr) && g.Board.GetSquare(srcAddr) == mi.piece {
 		return true
 	}
 	return false
 }
 
-func findPawnSrc(mv *move, g *Game) {
-	switch mv.piece {
+func findPawnSrc(mi MoveInfo, g Game) (string, error) {
+	switch mi.piece {
 	case WhitePawn:
-		if mv.capture {
-			if isSrc(mv, bytePlus(mv.dstFile, -1), bytePlus(mv.dstRank, -1), g) {
-				return
+		if mi.expectCapture {
+			for _, incs := range []increments{{-1, -1}, {1, -1}} {
+				addr := AddressPlus(mi.dstAddr, incs.incX, incs.incY)
+				if isSrc(mi, addr, g) {
+					return addr, nil
+				}
 			}
-			if isSrc(mv, bytePlus(mv.dstFile, 1), bytePlus(mv.dstRank, -1), g) {
-				return
-			}
-			panic("Illegal move.")
+			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		if isSrc(mv, mv.dstFile, bytePlus(mv.dstRank, -1), g) {
-			return
+		addr := AddressPlus(mi.dstAddr, 0, -1)
+		if isSrc(mi, addr, g) {
+			return addr, nil
 		}
-		homeRank := byte('2') // where the white pawn starts the game
-		// log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, 2), mv.dstFile)
-		if mv.dstRank == bytePlus(homeRank, 2) && isSrc(mv, mv.dstFile, homeRank, g) {
-			return
+
+		// first White pawn move can be 2 squares starting from rank 2
+		addr = NewAddress(AddressFile(mi.dstAddr), '2')
+		if AddressRank(mi.dstAddr) == '4' && isSrc(mi, addr, g) {
+			return addr, nil
 		}
 	case BlackPawn:
-		if mv.capture {
-			if isSrc(mv, bytePlus(mv.dstFile, 1), bytePlus(mv.dstRank, 1), g) {
-				return
+		if mi.expectCapture {
+			for _, incs := range []increments{{1, 1}, {-1, 1}} {
+				addr := AddressPlus(mi.dstAddr, incs.incX, incs.incY)
+				if isSrc(mi, addr, g) {
+					return addr, nil
+				}
 			}
-			if isSrc(mv, bytePlus(mv.dstFile, -1), bytePlus(mv.dstRank, 1), g) {
-				return
-			}
-			panic("Illegal move.")
+			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		if isSrc(mv, mv.dstFile, bytePlus(mv.dstRank, 1), g) {
-			return
-		}
-		homeRank := bytePlus(byte(g.Board.MaxRank()), -1) // where the black pawn starts the game
-		// log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, -2), mv.dstFile)
-		if mv.dstRank == bytePlus(homeRank, -2) && isSrc(mv, mv.dstFile, homeRank, g) {
-			return
+		addr := AddressPlus(mi.dstAddr, 0, 1)
+		if isSrc(mi, addr, g) {
+			return addr, nil
 		}
 
-	default:
-		panic("WTF")
+		// first Black pawn move can be 2 squares starting from Board.MaxRank() - 1
+		addr = NewAddress(AddressFile(mi.dstAddr), byte(g.Board.MaxRank())-1)
+		if AddressRank(mi.dstAddr) == byte(g.Board.MaxRank()-3) && isSrc(mi, addr, g) {
+			return addr, nil
+		}
 	}
+
+	return "", fmt.Errorf("couldn't find Pawn src for %q", mi.dstAddr)
 }
 
-func findDiagonalSrc(mv *move, g *Game) {
-	diagonals := []struct {
-		incX int8
-		incY int8
-	}{
-		{-1, -1}, {1, 1}, {1, -1}, {-1, 1},
-	}
-
-	// log.Printf("findDiagonalSrc(%c)", mv.piece)
-
-	for _, diag := range diagonals {
+func findDiagonalSrc(mi MoveInfo, g Game) (string, error) {
+	for _, diag := range []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}} {
 		incX, incY := diag.incX, diag.incY
-		// log.Printf(" incX/incY=%d/%d", incX, incY)
-		for addr := AddressPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
-			// log.Printf("  Checking at %q: %c", addr, g.Board.GetSquare(addr))
-			if isSrc(mv, addr[0], addr[1], g) {
-				// log.Printf("Found at %q", addr)
-				return
+		for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
+			if isSrc(mi, addr, g) {
+				return addr, nil
 			}
 		}
 	}
+
+	return "", fmt.Errorf("couldn't find a diagonal source for %s", mi.dstAddr)
+
 }
 
-func findHorizontalSrc(mv *move, g *Game) {
-	horizontals := []struct {
-		incX int8
-		incY int8
-	}{
-		{-1, 0}, {1, 0}, {0, -1}, {0, 1},
-	}
-
-	for _, horiz := range horizontals {
+func findHorizontalSrc(mi MoveInfo, g Game) (string, error) {
+	for _, horiz := range []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 		incX, incY := horiz.incX, horiz.incY
-		for addr := AddressPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
-			if isSrc(mv, addr[0], addr[1], g) {
-				return
+		for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
+			if isSrc(mi, addr, g) {
+				return addr, nil
 			}
 		}
 	}
+
+	return "", fmt.Errorf("couldn't find a horizontal source for %s", mi.dstAddr)
 }
 
-func findKingSrc(mv *move, g *Game) {
-	offsets := []struct {
-		incX, incY int8
-	}{
-		{-1, -1}, {-1, 0}, {0, -1}, {-1, 1}, {1, -1}, {1, 0}, {1, 1}, {0, 1},
-	}
-
-	for _, offs := range offsets {
-		addr := AddressPlus(mv.dstAddr, offs.incX, offs.incY)
-		if g.Board.InBounds(addr) && isSrc(mv, addr[0], addr[1], g) {
-			return
+func findKingSrc(mi MoveInfo, g Game) (string, error) {
+	for _, offs := range []increments{{-1, -1}, {-1, 0}, {0, -1}, {-1, 1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}} {
+		addr := AddressPlus(mi.dstAddr, offs.incX, offs.incY)
+		if g.Board.InBounds(addr) && isSrc(mi, addr, g) {
+			return addr, nil
 		}
 	}
+
+	return "", fmt.Errorf("couldn't find a King source for %s", mi.dstAddr)
 }
 
-func findKnightSrc(mv *move, g *Game) {
-	offsets := []struct {
-		incX, incY int8
-	}{
-		{-1, -2}, {-2, -1}, {1, -2}, {2, -1}, {1, 2}, {2, 1}, {-1, 2}, {-2, 1},
-	}
-
-	for _, offs := range offsets {
-		addr := AddressPlus(mv.dstAddr, offs.incX, offs.incY)
-		log.Printf("Trying %q", addr)
-		if g.Board.InBounds(addr) && isSrc(mv, addr[0], addr[1], g) {
-			log.Printf("Found at %q", addr)
-			return
+func findKnightSrc(mi MoveInfo, g Game) (string, error) {
+	for _, offs := range []increments{{-1, -2}, {-2, -1}, {1, -2}, {2, -1}, {1, 2}, {2, 1}, {-1, 2}, {-2, 1}} {
+		addr := AddressPlus(mi.dstAddr, offs.incX, offs.incY)
+		if g.Board.InBounds(addr) && isSrc(mi, addr, g) {
+			return addr, nil
 		}
 	}
+
+	return "", fmt.Errorf("couldn't find a Knight source for %s", mi.dstAddr)
 }
