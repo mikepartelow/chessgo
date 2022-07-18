@@ -54,7 +54,7 @@ func TestGameMove(t *testing.T) {
 			turn:         chessgo.Black,
 			move:         "Bxb2",
 			wantBoard:    StubBoard{squares: []byte("   b")},
-			wantCaptured: chessgo.WhiteKnight,
+			wantCaptured: chessgo.WhiteKnight{},
 		},
 		{
 			board:     StubBoard{squares: []byte("b  n")},
@@ -78,13 +78,13 @@ func TestGameMove(t *testing.T) {
 			board:        StubBoard{squares: []byte("P  q")},
 			move:         "axb2",
 			wantBoard:    StubBoard{squares: []byte("   P")},
-			wantCaptured: chessgo.BlackQueen,
+			wantCaptured: chessgo.BlackQueen{},
 		},
 		{
 			board:        StubBoard{squares: []byte(" Pq ")},
 			move:         "bxa2",
 			wantBoard:    StubBoard{squares: []byte("  P ")},
-			wantCaptured: chessgo.BlackQueen,
+			wantCaptured: chessgo.BlackQueen{},
 		},
 		// todo: disambiguate the move (left diagonal capture) between two possible pawns
 		// todo: disambiguate the move (right diagonal capture) between two possible pawns
@@ -93,14 +93,14 @@ func TestGameMove(t *testing.T) {
 			turn:         chessgo.Black,
 			move:         "bxa1",
 			wantBoard:    StubBoard{squares: []byte("p   ")},
-			wantCaptured: chessgo.WhiteQueen,
+			wantCaptured: chessgo.WhiteQueen{},
 		},
 		{
 			board:        StubBoard{squares: []byte(" Qp ")},
 			turn:         chessgo.Black,
 			move:         "axb1",
 			wantBoard:    StubBoard{squares: []byte(" p  ")},
-			wantCaptured: chessgo.WhiteQueen,
+			wantCaptured: chessgo.WhiteQueen{},
 		},
 		// todo: disambiguate the move (left diagonal capture) between two possible pawns
 		// todo: disambiguate the move (right diagonal capture) between two possible pawns
@@ -205,7 +205,7 @@ func TestGameMove(t *testing.T) {
 				t.Errorf("got %q, wanted %q after move %q", g.Board, &tC.wantBoard, tC.move)
 			}
 
-			if tC.wantCaptured != chessgo.Piece(0) && captured != tC.wantCaptured {
+			if captured != tC.wantCaptured {
 				t.Errorf("got %q captured, wanted %q", captured, tC.wantCaptured)
 			}
 		})
@@ -242,17 +242,21 @@ func (b *StubBoard) InBounds(addr chessgo.Address) bool {
 }
 
 func (b *StubBoard) GetSquare(addr chessgo.Address) chessgo.Piece {
-	return chessgo.Piece(b.squares[b.getIndex(addr)])
+	return chessgo.PieceFromByte(b.squares[b.getIndex(addr)])
 }
 
 func (b *StubBoard) SetSquare(addr chessgo.Address, piece chessgo.Piece) {
-	b.squares[b.getIndex(addr)] = byte(piece)
+	if piece != nil {
+		b.squares[b.getIndex(addr)] = piece.Byte()
+	} else {
+		b.squares[b.getIndex(addr)] = ' '
+	}
 }
 
 func (b *StubBoard) Move(srcAddr, dstAddr chessgo.Address) chessgo.Piece {
 	captured := b.GetSquare(dstAddr)
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
-	b.SetSquare(srcAddr, chessgo.NoPiece)
+	b.SetSquare(srcAddr, nil)
 	return captured
 }
 
@@ -260,13 +264,13 @@ func (b *StubBoard) String() string {
 	return string(b.squares)
 }
 
-func (b *StubBoard) MaxFile() rune {
-	m := rune(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
+func (b *StubBoard) MaxFile() byte {
+	m := byte(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
 	return m
 }
 
-func (b *StubBoard) MaxRank() rune {
-	m := rune(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
+func (b *StubBoard) MaxRank() byte {
+	m := byte(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
 	return m
 }
 

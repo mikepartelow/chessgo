@@ -1,106 +1,170 @@
 package chessgo
 
-type Piece rune
+import "fmt"
 
-var NoPiece Piece = Piece(' ')
+type Piece interface {
+	Byte() byte
+	Color() Color
+}
 
-var BlackRook Piece = Piece('r')
-var BlackKnight Piece = Piece('n')
-var BlackBishop Piece = Piece('b')
-var BlackQueen Piece = Piece('q')
-var BlackKing Piece = Piece('k')
-var BlackPawn Piece = Piece('p')
+// White
+type WhitePawn struct{}
 
-var WhiteRook Piece = Piece('R')
-var WhiteKnight Piece = Piece('N')
-var WhiteBishop Piece = Piece('B')
-var WhiteQueen Piece = Piece('Q')
-var WhiteKing Piece = Piece('K')
-var WhitePawn Piece = Piece('P')
+func (p WhitePawn) Byte() byte   { return 'P' }
+func (p WhitePawn) Color() Color { return White }
+
+type WhiteRook struct{}
+
+func (p WhiteRook) Byte() byte   { return 'R' }
+func (p WhiteRook) Color() Color { return White }
+
+type WhiteKnight struct{}
+
+func (p WhiteKnight) Byte() byte   { return 'N' }
+func (p WhiteKnight) Color() Color { return White }
+
+type WhiteBishop struct{}
+
+func (p WhiteBishop) Byte() byte   { return 'B' }
+func (p WhiteBishop) Color() Color { return White }
+
+type WhiteQueen struct{}
+
+func (p WhiteQueen) Byte() byte   { return 'Q' }
+func (p WhiteQueen) Color() Color { return White }
+
+type WhiteKing struct{}
+
+func (p WhiteKing) Byte() byte   { return 'K' }
+func (p WhiteKing) Color() Color { return White }
+
+// Black
+type BlackPawn struct{}
+
+func (p BlackPawn) Byte() byte   { return 'p' }
+func (p BlackPawn) Color() Color { return Black }
+
+type BlackRook struct{}
+
+func (p BlackRook) Byte() byte   { return 'r' }
+func (p BlackRook) Color() Color { return Black }
+
+type BlackKnight struct{}
+
+func (p BlackKnight) Byte() byte   { return 'n' }
+func (p BlackKnight) Color() Color { return Black }
+
+type BlackBishop struct{}
+
+func (p BlackBishop) Byte() byte   { return 'b' }
+func (p BlackBishop) Color() Color { return Black }
+
+type BlackQueen struct{}
+
+func (p BlackQueen) Byte() byte   { return 'q' }
+func (p BlackQueen) Color() Color { return Black }
+
+type BlackKing struct{}
+
+func (p BlackKing) Byte() byte   { return 'k' }
+func (p BlackKing) Color() Color { return Black }
 
 func Pawn(color Color) Piece {
 	switch color {
 	case White:
-		return WhitePawn
+		return WhitePawn{}
 	case Black:
-		return BlackPawn
+		return BlackPawn{}
 	default:
-		panic("Invalid color")
-	}
-}
-
-func Bishop(color Color) Piece {
-	switch color {
-	case White:
-		return WhiteBishop
-	case Black:
-		return BlackBishop
-	default:
-		panic("Invalid color")
-	}
-}
-
-func Queen(color Color) Piece {
-	switch color {
-	case White:
-		return WhiteQueen
-	case Black:
-		return BlackQueen
-	default:
-		panic("Invalid color")
-	}
-}
-
-func King(color Color) Piece {
-	switch color {
-	case White:
-		return WhiteKing
-	case Black:
-		return BlackKing
-	default:
-		panic("Invalid color")
-	}
-}
-
-func Knight(color Color) Piece {
-	switch color {
-	case White:
-		return WhiteKnight
-	case Black:
-		return BlackKnight
-	default:
-		panic("Invalid color")
+		panic("invalid Color")
 	}
 }
 
 func Rook(color Color) Piece {
 	switch color {
 	case White:
-		return WhiteRook
+		return WhiteRook{}
 	case Black:
-		return BlackRook
+		return BlackRook{}
 	default:
-		panic("Invalid color")
+		panic("invalid Color")
 	}
 }
 
-func validPiece(p Piece) bool {
-	switch p {
-	case NoPiece,
-		BlackRook,
-		BlackKnight,
-		BlackBishop,
-		BlackQueen,
-		BlackKing,
-		BlackPawn,
-
-		WhiteRook,
-		WhiteKnight,
-		WhiteBishop,
-		WhiteQueen,
-		WhiteKing,
-		WhitePawn:
-		return true
+func Knight(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteKnight{}
+	case Black:
+		return BlackKnight{}
+	default:
+		panic("invalid Color")
 	}
-	return false
+}
+
+func Bishop(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteBishop{}
+	case Black:
+		return BlackBishop{}
+	default:
+		panic("invalid Color")
+	}
+}
+
+func Queen(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteQueen{}
+	case Black:
+		return BlackQueen{}
+	default:
+		panic("invalid Color")
+	}
+}
+
+func King(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteKing{}
+	case Black:
+		return BlackKing{}
+	default:
+		panic("invalid Color")
+	}
+}
+
+func PieceFromByte(b byte) Piece {
+	switch b {
+	case ' ':
+		return nil
+	case 'P':
+		return WhitePawn{}
+	case 'R':
+		return WhiteRook{}
+	case 'N':
+		return WhiteKnight{}
+	case 'B':
+		return WhiteBishop{}
+	case 'Q':
+		return WhiteQueen{}
+	case 'K':
+		return WhiteKing{}
+
+	case 'p':
+		return BlackPawn{}
+	case 'r':
+		return BlackRook{}
+	case 'n':
+		return BlackKnight{}
+	case 'b':
+		return BlackBishop{}
+	case 'q':
+		return BlackQueen{}
+	case 'k':
+		return BlackKing{}
+	}
+
+	panic(fmt.Sprintf("unknown piece-byte: %c", b))
 }

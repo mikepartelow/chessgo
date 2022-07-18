@@ -32,7 +32,7 @@ func parseMove(move string, g Game) (*MoveInfo, error) {
 }
 
 func parseDst(move string, g Game) (*MoveInfo, error) {
-	mi := MoveInfo{piece: Pawn(g.Turn), captured: NoPiece}
+	mi := MoveInfo{piece: Pawn(g.Turn), captured: nil}
 
 	dstAddrBuf := bytes.Buffer{}
 
@@ -71,7 +71,7 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 	mi.dstAddr = NewAddress(dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0])
 	mi.captured = g.Board.GetSquare(mi.dstAddr)
 
-	if mi.captured != NoPiece && ColorOf(mi.captured) == g.Turn {
+	if mi.captured != nil && mi.captured.Color() == g.Turn {
 		return nil, fmt.Errorf("attempt to capture own piece at %q with %c", mi.dstAddr, mi.piece)
 	}
 
@@ -81,7 +81,7 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 func findSrc(mi MoveInfo, g Game) (Address, error) {
 	var srcAddr Address
 
-	switch mi.piece {
+	switch mi.piece.(type) {
 	case WhitePawn, BlackPawn:
 		srcAddr, _ = findPawnSrc(mi, g)
 	case WhiteBishop, BlackBishop:
@@ -113,7 +113,7 @@ func findPawnSrc(mi MoveInfo, g Game) (Address, error) {
 		return g.Board.InBounds(addr) && g.Board.GetSquare(addr) == mi.piece
 	}
 
-	switch mi.piece {
+	switch mi.piece.(type) {
 	case WhitePawn:
 		if mi.expectCapture {
 			for _, incs := range []increments{{-1, -1}, {1, -1}} {

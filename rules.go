@@ -38,7 +38,7 @@ func findSrcOnLine(dstAddr Address, piece Piece, board Board, incX, incY int8) A
 		switch board.GetSquare(addr) {
 		case piece:
 			return addr
-		case NoPiece:
+		case nil:
 			continue
 		default:
 			// move is blocked by some piece

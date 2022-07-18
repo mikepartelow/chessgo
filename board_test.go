@@ -9,8 +9,8 @@ import (
 func TestNewBoard(t *testing.T) {
 	b := chessgo.NewBoard()
 
-	files := "abcdefgh"
-	ranks := "12345678"
+	files := []byte("abcdefgh")
+	ranks := []byte("12345678")
 
 	for _, file := range files {
 		for _, rank := range ranks {
@@ -78,7 +78,7 @@ func TestGetSquare(t *testing.T) {
 	}{
 		{
 			addr: "b8",
-			want: chessgo.BlackKnight,
+			want: chessgo.BlackKnight{},
 		},
 	}
 	for _, tC := range testCases {
@@ -107,7 +107,7 @@ func TestSetSquare(t *testing.T) {
 
 	t.Run("sets square contents", func(t *testing.T) {
 		addr := chessgo.NewAddress('d', '5')
-		want := chessgo.BlackKnight
+		want := chessgo.BlackKnight{}
 		b.SetSquare(addr, want)
 
 		assertSquare(t, b, addr, want)
@@ -119,7 +119,7 @@ func TestSetSquare(t *testing.T) {
 				t.Errorf("Expected Panic")
 			}
 		}()
-		b.SetSquare("-1", chessgo.BlackBishop)
+		b.SetSquare("-1", chessgo.BlackBishop{})
 	})
 
 	t.Run("panics on out of bounds(b)", func(t *testing.T) {
@@ -128,16 +128,7 @@ func TestSetSquare(t *testing.T) {
 				t.Errorf("Expected Panic")
 			}
 		}()
-		b.SetSquare("a99", chessgo.BlackBishop)
-	})
-
-	t.Run("panics on invalid piece", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("Expected Panic")
-			}
-		}()
-		b.SetSquare("a1", 'X')
+		b.SetSquare("a99", chessgo.BlackBishop{})
 	})
 }
 
@@ -148,19 +139,17 @@ func TestBoardMove(t *testing.T) {
 		replaced chessgo.Piece
 	}{
 		{
-			srcAddr:  "a2",
-			dstAddr:  "a3",
-			replaced: chessgo.NoPiece,
+			srcAddr: "a2",
+			dstAddr: "a3",
 		},
 		{
-			srcAddr:  "b7",
-			dstAddr:  "b5",
-			replaced: chessgo.NoPiece,
+			srcAddr: "b7",
+			dstAddr: "b5",
 		},
 		{
 			srcAddr:  "c7",
 			dstAddr:  "c8",
-			replaced: chessgo.BlackBishop,
+			replaced: chessgo.BlackBishop{},
 		},
 	}
 
@@ -172,7 +161,7 @@ func TestBoardMove(t *testing.T) {
 			want := b.GetSquare(tC.srcAddr)
 			replaced := b.Move(tC.srcAddr, tC.dstAddr)
 			assertSquare(t, b, tC.dstAddr, want)
-			assertSquare(t, b, tC.srcAddr, chessgo.NoPiece)
+			assertSquare(t, b, tC.srcAddr, nil)
 			if replaced != tC.replaced {
 				t.Errorf("wanted to replace %c, replaced %c instead", tC.replaced, replaced)
 			}
@@ -276,39 +265,39 @@ func assertSquare(t testing.TB, board chessgo.Board, addr chessgo.Address, want 
 	}
 }
 
-func defaultPiece(rank, file rune) chessgo.Piece {
+func defaultPiece(rank, file byte) chessgo.Piece {
 	switch rank {
 	case '1':
 		switch file {
 		case 'a', 'h':
-			return chessgo.WhiteRook
+			return chessgo.WhiteRook{}
 		case 'b', 'g':
-			return chessgo.WhiteKnight
+			return chessgo.WhiteKnight{}
 		case 'c', 'f':
-			return chessgo.WhiteBishop
+			return chessgo.WhiteBishop{}
 		case 'd':
-			return chessgo.WhiteQueen
+			return chessgo.WhiteQueen{}
 		case 'e':
-			return chessgo.WhiteKing
+			return chessgo.WhiteKing{}
 		}
 	case '8':
 		switch file {
 		case 'a', 'h':
-			return chessgo.BlackRook
+			return chessgo.BlackRook{}
 		case 'b', 'g':
-			return chessgo.BlackKnight
+			return chessgo.BlackKnight{}
 		case 'c', 'f':
-			return chessgo.BlackBishop
+			return chessgo.BlackBishop{}
 		case 'd':
-			return chessgo.BlackQueen
+			return chessgo.BlackQueen{}
 		case 'e':
-			return chessgo.BlackKing
+			return chessgo.BlackKing{}
 		}
 	case '2':
-		return chessgo.WhitePawn
+		return chessgo.WhitePawn{}
 	case '7':
-		return chessgo.BlackPawn
+		return chessgo.BlackPawn{}
 	}
 
-	return chessgo.NoPiece
+	return nil
 }

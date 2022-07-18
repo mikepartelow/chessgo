@@ -6,8 +6,8 @@ type Board interface {
 	SetSquare(addr Address, piece Piece)
 	Move(srcAddr, dstAddr Address) Piece
 	String() string
-	MaxFile() rune
-	MaxRank() rune
+	MaxFile() byte
+	MaxRank() byte
 	InCheck(Color) bool
 	Mated(Color) bool
 }

@@ -29,15 +29,16 @@ func (b *StandardBoard) InBounds(addr Address) bool {
 
 func (b *StandardBoard) GetSquare(addr Address) Piece {
 	index := b.getIndex(addr)
-	return Piece(b.squares[index])
+	return PieceFromByte(b.squares[index])
 }
 
 func (b *StandardBoard) SetSquare(addr Address, piece Piece) {
-	if !validPiece(piece) {
-		panic(fmt.Sprintf("Invalid piece: %c", piece))
-	}
 	index := b.getIndex(addr)
-	b.squares[index] = byte(piece)
+	if piece != nil {
+		b.squares[index] = piece.Byte()
+	} else {
+		b.squares[index] = ' '
+	}
 }
 
 // no bounds checking: panic on out-of-bounds, like a slice would do
@@ -53,7 +54,7 @@ func (b *StandardBoard) getIndex(addr Address) uint8 {
 func (b *StandardBoard) Move(srcAddr, dstAddr Address) Piece {
 	replaced := b.GetSquare(dstAddr)
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
-	b.SetSquare(srcAddr, NoPiece)
+	b.SetSquare(srcAddr, nil)
 
 	return replaced
 }
@@ -62,11 +63,11 @@ func (b *StandardBoard) String() string {
 	return string(b.squares)
 }
 
-func (b *StandardBoard) MaxFile() rune {
+func (b *StandardBoard) MaxFile() byte {
 	return 'h'
 }
 
-func (b *StandardBoard) MaxRank() rune {
+func (b *StandardBoard) MaxRank() byte {
 	return '8'
 }
 
@@ -107,7 +108,7 @@ func (b *StandardBoard) inCheckHorizontal(kingAddr Address, opponent Piece) bool
 			piece := b.GetSquare(addr)
 			if piece == opponent {
 				return true
-			} else if piece != NoPiece {
+			} else if piece != nil {
 				break
 			}
 		}

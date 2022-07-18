@@ -34,7 +34,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "exf4",
 			wantBoard:    "RNBQKBNRPPPP  PP            Pp                  pppp ppprnbqkbnr",
-			wantCaptured: chessgo.WhitePawn,
+			wantCaptured: chessgo.WhitePawn{},
 		},
 		{
 			move:      "Bc4",
@@ -56,7 +56,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "Bxb5",
 			wantBoard:    "RNBQ KNRPPPP  PP            Pp q B              p pp ppprnb kbnr",
-			wantCaptured: chessgo.BlackPawn,
+			wantCaptured: chessgo.BlackPawn{},
 		},
 		{
 			move:      "Nf6",
@@ -109,7 +109,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "cxb5",
 			wantBoard:    "RNBQ KR PPP    P   P        PpP  p   Nq      n  p  p ppprnb kb r",
-			wantCaptured: chessgo.WhiteBishop,
+			wantCaptured: chessgo.WhiteBishop{},
 		},
 		{
 			move:      "h4",
@@ -138,7 +138,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "Bxf4",
 			wantBoard:    "RN   KR PPP        P Q      PBP  p   NqP        p  p ppprnb kbnr",
-			wantCaptured: chessgo.BlackPawn,
+			wantCaptured: chessgo.BlackPawn{},
 		},
 		{
 			move:      "Qf6",
@@ -159,7 +159,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "Qxb2",
 			wantBoard:    "R    KR PqP        P Q      PBP  pbN N P        p  p ppprnb k nr",
-			wantCaptured: chessgo.WhitePawn,
+			wantCaptured: chessgo.WhitePawn{},
 		},
 		{
 			move:      "Bd6",
@@ -168,7 +168,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "Bxg1",
 			wantBoard:    "R    Kb PqP        P Q      P P  p N N P   B    p  p ppprnb k nr",
-			wantCaptured: chessgo.WhiteRook,
+			wantCaptured: chessgo.WhiteRook{},
 		},
 		{
 			move:      "e5",
@@ -178,7 +178,7 @@ func TestTheImmortalGame(t *testing.T) {
 			move:         "Qxa1+",
 			wantBoard:    "q    Kb P P        P Q        P  p NPN P   B    p  p ppprnb k nr",
 			wantCheck:    true,
-			wantCaptured: chessgo.WhiteRook,
+			wantCaptured: chessgo.WhiteRook{},
 		},
 		{
 			move:      "Ke2",
@@ -192,7 +192,7 @@ func TestTheImmortalGame(t *testing.T) {
 			move:         "Nxg7+",
 			wantBoard:    "q     b P P K      P Q        P  p NP  Pn  B    p  p pNpr b k nr",
 			wantCheck:    true,
-			wantCaptured: chessgo.BlackPawn,
+			wantCaptured: chessgo.BlackPawn{},
 		},
 		{
 			move:      "Kd8",
@@ -206,7 +206,7 @@ func TestTheImmortalGame(t *testing.T) {
 		{
 			move:         "Nxf6",
 			wantBoard:    "q     b P P K      P          P  p NP  Pn  B n  p  p pNpr bk   r",
-			wantCaptured: chessgo.WhiteQueen,
+			wantCaptured: chessgo.WhiteQueen{},
 		},
 		{
 			move:      "Be7#",
@@ -228,12 +228,8 @@ func TestTheImmortalGame(t *testing.T) {
 				t.Fatalf("Unexpected error %v", err)
 			}
 
-			if tC.wantCaptured == chessgo.Piece(0) {
-				if captured != chessgo.NoPiece {
-					t.Fatalf("captured %q but was expecting no capture", captured)
-				}
-			} else if captured != tC.wantCaptured {
-				t.Fatalf("Wanted %q got %q", tC.wantCaptured, captured)
+			if captured != tC.wantCaptured {
+				t.Fatalf("Wanted %q captured, got %q", tC.wantCaptured, captured)
 			}
 
 			if game.Board.String() != tC.wantBoard {

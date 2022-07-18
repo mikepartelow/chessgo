@@ -11,7 +11,7 @@ func (g *Game) Move(move string) (Piece, error) {
 	// todo: *yuck
 	mv, err := parseMove(move, *g)
 	if err != nil {
-		return NoPiece, fmt.Errorf("error parsing move %q: %v", move, err)
+		return nil, fmt.Errorf("error parsing move %q: %v", move, err)
 	}
 
 	g.Board.Move(mv.srcAddr, mv.dstAddr)
