@@ -76,6 +76,7 @@ func (b *StandardBoard) InCheck(color Color) bool {
 	// todo: arrange these in order of statistically most likely to be true
 	return b.inCheckHorizontal(kingAddr, Queen(color.Opponent())) ||
 		findDiagonalSrc(kingAddr, Queen(color.Opponent()), b) != "" ||
+		findDiagonalSrc(kingAddr, Bishop(color.Opponent()), b) != "" ||
 		findKnightSrc(kingAddr, Knight(color.Opponent()), b) != ""
 }
 
@@ -134,5 +135,9 @@ func (b *StandardBoard) inCheckDiagonal(kingAddr string, opponent Piece) bool {
 		}
 	}
 
+	return false
+}
+
+func (b *StandardBoard) Mated(color Color) bool {
 	return false
 }

@@ -16,6 +16,7 @@ func Test(t *testing.T) {
 		wantBoard    string
 		wantCaptured chessgo.Piece
 		wantCheck    bool
+		wantMate     bool
 	}{
 		{
 
@@ -193,6 +194,26 @@ func Test(t *testing.T) {
 			wantCheck:    true,
 			wantCaptured: chessgo.BlackPawn,
 		},
+		{
+			move:      "Kd8",
+			wantBoard: "q     b P P K      P Q        P  p NP  Pn  B    p  p pNpr bk  nr",
+		},
+		{
+			move:      "Qf6+",
+			wantBoard: "q     b P P K      P          P  p NP  Pn  B Q  p  p pNpr bk  nr",
+			wantCheck: true,
+		},
+		{
+			move:         "Nxf6",
+			wantBoard:    "q     b P P K      P          P  p NP  Pn  B n  p  p pNpr bk   r",
+			wantCaptured: chessgo.WhiteQueen,
+		},
+		{
+			move:      "Be7#",
+			wantBoard: "q     b P P K      P          P  p NP  Pn    n  p  pBpNpr bk   r",
+			wantCheck: true,
+			wantMate:  true,
+		},
 	}
 
 	board := chessgo.NewBoard()
@@ -219,9 +240,16 @@ func Test(t *testing.T) {
 				t.Fatalf("Want Board %q, got %q", tC.wantBoard, game.Board.String())
 			}
 
-			if game.Board.InCheck(game.Turn) != tC.wantCheck {
-				t.Fatalf("Wanted Check but Board reports no check.")
+			gotCheck := game.Board.InCheck(game.Turn)
+			if gotCheck != tC.wantCheck {
+				t.Fatalf("Wanted check == %v but Board reports check == %v.", tC.wantCheck, gotCheck)
 			}
+
+			//todo: check for mate!
+			// gotMate := game.Board.Mated(game.Turn)
+			// if gotMate != tC.wantMate {
+			// 	t.Fatalf("Wanted mate == %v but Board reports mate == %v.", tC.wantMate, gotMate)
+			// }
 		})
 	}
 }

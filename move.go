@@ -12,6 +12,7 @@ type MoveInfo struct {
 	captured      Piece
 	expectCapture bool
 	check         bool
+	mate          bool
 }
 
 func parseMove(move string, g Game) (*MoveInfo, error) {
@@ -37,6 +38,12 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 
 	if move[len(move)-1:] == "+" {
 		mi.check = true
+		move = move[:len(move)-1]
+	}
+
+	if move[len(move)-1:] == "#" {
+		mi.check = true
+		mi.mate = true
 		move = move[:len(move)-1]
 	}
 

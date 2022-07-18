@@ -289,6 +289,10 @@ func (b *StubBoard) InCheck(color chessgo.Color) bool {
 	return false
 }
 
+func (b *StubBoard) Mated(color chessgo.Color) bool {
+	return false
+}
+
 func (b *StubBoard) getIndex(addr string) uint8 {
 	file := addr[0]
 	rank := addr[1]

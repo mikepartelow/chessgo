@@ -9,4 +9,5 @@ type Board interface {
 	MaxFile() rune
 	MaxRank() rune
 	InCheck(Color) bool
+	Mated(Color) bool
 }

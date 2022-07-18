@@ -249,6 +249,11 @@ func TestCheck(t *testing.T) {
 			color:       chessgo.Black,
 			want:        true,
 		},
+		{
+			boardString: "q     b P P K      P          P  p NP  Pn    n  p  pBpNpr bk   r",
+			color:       chessgo.Black,
+			want:        true,
+		},
 	}
 
 	for idx, tC := range testCases {
