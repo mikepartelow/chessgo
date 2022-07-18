@@ -187,12 +187,12 @@ func Test(t *testing.T) {
 			move:      "Na6",
 			wantBoard: "q     b P P K      P Q        P  p NPN Pn  B    p  p pppr b k nr",
 		},
-		// {
-		// 	move:         "Nxg7+",
-		// 	wantBoard:    "q     b P P K      P Q        P  p NP  Pn  B    p  p pNpr b k nr",
-		// 	wantCheck:    true,
-		// 	wantCaptured: chessgo.BlackPawn,
-		// },
+		{
+			move:         "Nxg7+",
+			wantBoard:    "q     b P P K      P Q        P  p NP  Pn  B    p  p pNpr b k nr",
+			wantCheck:    true,
+			wantCaptured: chessgo.BlackPawn,
+		},
 	}
 
 	board := chessgo.NewBoard()

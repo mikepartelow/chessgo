@@ -73,15 +73,10 @@ func (b *StandardBoard) MaxRank() rune {
 func (b *StandardBoard) InCheck(color Color) bool {
 	kingAddr := b.findKing(color)
 
-	if b.inCheckHorizontal(kingAddr, Queen(ToggleColor(color))) {
-		return true
-	}
-
-	if b.inCheckDiagonal(kingAddr, Queen(ToggleColor(color))) {
-		return true
-	}
-
-	return false
+	// todo: arrange these in order of statistically most likely to be true
+	return b.inCheckHorizontal(kingAddr, Queen(color.Opponent())) ||
+		b.inCheckDiagonal(kingAddr, Queen(color.Opponent())) ||
+		b.inCheckFromKnight(kingAddr, Knight(color.Opponent()))
 }
 
 func (b *StandardBoard) findKing(color Color) (addr string) {
@@ -100,14 +95,8 @@ func (b *StandardBoard) findKing(color Color) (addr string) {
 }
 
 func (b *StandardBoard) inCheckHorizontal(kingAddr string, opponent Piece) bool {
-	increments := []struct {
-		incX int8
-		incY int8
-	}{
-		{-1, 0}, {1, 0}, {0, -1}, {0, 1},
-	}
-
-	for _, incs := range increments {
+	// todo: refactor to leverage move.go's stuff
+	for _, incs := range []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 		incX, incY := incs.incX, incs.incY
 		for i, j := incX, incY; i > -7 && i < 8 && j > -7 && j < 8; i, j = i+incX, j+incY {
 			addr := AddressPlus(kingAddr, i, j)
@@ -127,14 +116,9 @@ func (b *StandardBoard) inCheckHorizontal(kingAddr string, opponent Piece) bool 
 }
 
 func (b *StandardBoard) inCheckDiagonal(kingAddr string, opponent Piece) bool {
-	increments := []struct {
-		incX int8
-		incY int8
-	}{
-		{-1, -1}, {1, 1}, {1, -1}, {-1, 1},
-	}
+	// todo: refactor to leverage move.go's stuff
 
-	for _, incs := range increments {
+	for _, incs := range []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}} {
 		incX, incY := incs.incX, incs.incY
 		for i, j := incX, incY; i > -7 && i < 8 && j > -7 && j < 8; i, j = i+incX, j+incY {
 			addr := AddressPlus(kingAddr, i, j)
@@ -147,6 +131,17 @@ func (b *StandardBoard) inCheckDiagonal(kingAddr string, opponent Piece) bool {
 			} else if piece != NoPiece {
 				break
 			}
+		}
+	}
+
+	return false
+}
+
+func (b *StandardBoard) inCheckFromKnight(kingAddr string, opponent Piece) bool {
+	for _, offs := range []increments{{-1, -2}, {-2, -1}, {1, -2}, {2, -1}, {1, 2}, {2, 1}, {-1, 2}, {-2, 1}} {
+		addr := AddressPlus(kingAddr, offs.incX, offs.incY)
+		if b.InBounds(addr) && b.GetSquare(addr) == opponent {
+			return true
 		}
 	}
 

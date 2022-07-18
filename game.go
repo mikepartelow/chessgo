@@ -15,7 +15,7 @@ func (g *Game) Move(move string) (Piece, error) {
 	}
 
 	g.Board.Move(mv.srcAddr, mv.dstAddr)
-	g.Turn = ToggleColor(g.Turn)
+	g.Turn = g.Turn.Opponent()
 
 	// todo: tdd
 	// if mv.capture && mv.replaced == NoPiece {

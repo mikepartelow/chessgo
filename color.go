@@ -17,8 +17,8 @@ func (c *Color) String() string {
 	panic("Invalid Color")
 }
 
-func ToggleColor(color Color) Color {
-	switch color {
+func (c *Color) Opponent() Color {
+	switch *c {
 	case White:
 		return Black
 	case Black:
