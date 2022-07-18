@@ -8,9 +8,9 @@ import (
 
 // todo: move integration tests to own directory
 
-// https://github.com/mikepartelow/chesspy/blob/main/app/tests/games/immortal.txt
+func TestTheImmortalGame(t *testing.T) {
+	// https://www.chessgames.com/perl/chessgame?gid=1018910
 
-func Test(t *testing.T) {
 	moves := []struct {
 		move         string
 		wantBoard    string
