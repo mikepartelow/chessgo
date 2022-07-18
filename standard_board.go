@@ -1,15 +1,22 @@
 package chessgo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type StandardBoard struct {
 	squares []byte
 }
 
 func NewBoard() *StandardBoard {
-	return &StandardBoard{
-		squares: []byte("RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr"),
+	return NewBoardFromString("RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr")
+}
+
+func NewBoardFromString(from string) *StandardBoard {
+	if len(from) != 64 {
+		panic(fmt.Sprintf("Standard Board is 8x8, can't initialize with %d bytes given.", len(from)))
 	}
+	return &StandardBoard{squares: []byte(from)}
 }
 
 func (b *StandardBoard) InBounds(addr string) bool {
@@ -17,7 +24,7 @@ func (b *StandardBoard) InBounds(addr string) bool {
 		return false
 	}
 	index := b.getIndex(addr)
-	return index <= uint8(len(b.squares))
+	return index < uint8(len(b.squares))
 }
 
 func (b *StandardBoard) GetSquare(addr string) Piece {
@@ -36,6 +43,7 @@ func (b *StandardBoard) SetSquare(addr string, piece Piece) {
 // no bounds checking: panic on out-of-bounds, like a slice would do
 // callers can use Board.InBounds() for error checking
 func (b *StandardBoard) getIndex(addr string) uint8 {
+	// log.Printf(" getIndex(%s)", addr)
 	file := 7 - (uint8('h') - addr[0])
 	rank := 7 - (uint8('8') - uint8(addr[1]))
 
@@ -60,4 +68,76 @@ func (b *StandardBoard) MaxFile() rune {
 
 func (b *StandardBoard) MaxRank() rune {
 	return '8'
+}
+
+func (b *StandardBoard) InCheck(color Color) bool {
+	kingAddr := b.findKing(color)
+
+	// todo: arrange these in order of statistically most likely to be true
+	return b.inCheckHorizontal(kingAddr, Queen(color.Opponent())) ||
+		findDiagonalSrc(kingAddr, Queen(color.Opponent()), b) != "" ||
+		findDiagonalSrc(kingAddr, Bishop(color.Opponent()), b) != "" ||
+		findKnightSrc(kingAddr, Knight(color.Opponent()), b) != ""
+}
+
+func (b *StandardBoard) findKing(color Color) (addr string) {
+	wantedKing := King(color)
+
+	for i := uint8(0); i < 8; i++ {
+		for j := uint8(0); j < 8; j++ {
+			addr = fmt.Sprintf("%c%c", 'a'+i, '1'+j)
+			if b.GetSquare(addr) == wantedKing {
+				return
+			}
+		}
+	}
+
+	panic(fmt.Sprintf("Missing %s King!", color.String()))
+}
+
+func (b *StandardBoard) inCheckHorizontal(kingAddr string, opponent Piece) bool {
+	// todo: refactor to leverage move.go's stuff
+	for _, incs := range []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+		incX, incY := incs.incX, incs.incY
+		for i, j := incX, incY; i > -7 && i < 8 && j > -7 && j < 8; i, j = i+incX, j+incY {
+			addr := addressPlus(kingAddr, i, j)
+			if !b.InBounds(addr) {
+				break
+			}
+			piece := b.GetSquare(addr)
+			if piece == opponent {
+				return true
+			} else if piece != NoPiece {
+				break
+			}
+		}
+	}
+
+	return false
+}
+
+func (b *StandardBoard) inCheckDiagonal(kingAddr string, opponent Piece) bool {
+	// todo: refactor to leverage move.go's stuff
+
+	for _, incs := range []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}} {
+		incX, incY := incs.incX, incs.incY
+		for i, j := incX, incY; i > -7 && i < 8 && j > -7 && j < 8; i, j = i+incX, j+incY {
+			addr := addressPlus(kingAddr, i, j)
+			if !b.InBounds(addr) {
+				break
+			}
+			piece := b.GetSquare(addr)
+			if piece == opponent {
+				return true
+			} else if piece != NoPiece {
+				break
+			}
+		}
+	}
+
+	return false
+}
+
+func (b *StandardBoard) Mated(color Color) bool {
+	return false
 }

@@ -8,4 +8,6 @@ type Board interface {
 	String() string
 	MaxFile() rune
 	MaxRank() rune
+	InCheck(Color) bool
+	Mated(Color) bool
 }

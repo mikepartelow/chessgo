@@ -223,6 +223,51 @@ func TestBoardString(t *testing.T) {
 	})
 }
 
+func TestCheck(t *testing.T) {
+	testCases := []struct {
+		boardString string
+		color       chessgo.Color
+		want        bool
+	}{
+		{
+			boardString: "RNBQKBNRPPPPPPPP                                pppppppprnbqkbnr",
+			color:       chessgo.Black,
+			want:        false,
+		},
+		{
+			boardString: "RNBQKBNRPPPPPPPP                                pppppppprnbqkQnr",
+			color:       chessgo.Black,
+			want:        true,
+		},
+		{
+			boardString: "RNBQKBNRPPPPPPPP                                pppppQpprnbqkbnr",
+			color:       chessgo.Black,
+			want:        true,
+		},
+		{
+			boardString: "q     b P P K      P Q        P  p NP  Pn  B    p  p pNpr b k nr",
+			color:       chessgo.Black,
+			want:        true,
+		},
+		{
+			boardString: "q     b P P K      P          P  p NP  Pn    n  p  pBpNpr bk   r",
+			color:       chessgo.Black,
+			want:        true,
+		},
+	}
+
+	for idx, tC := range testCases {
+		desc := fmt.Sprintf("Case %d want %v", idx, tC.want)
+		t.Run(desc, func(t *testing.T) {
+			board := chessgo.NewBoardFromString(tC.boardString)
+			got := board.InCheck(tC.color)
+			if got != tC.want {
+				t.Errorf("got %v wanted %v", got, tC.want)
+			}
+		})
+	}
+}
+
 func assertSquare(t testing.TB, board chessgo.Board, addr string, want chessgo.Piece) {
 	t.Helper()
 	got := board.GetSquare(addr)

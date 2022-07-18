@@ -2,10 +2,10 @@ package chessgo_test
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"mp/chessgo"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -30,7 +30,7 @@ func TestGameMove(t *testing.T) {
 		move         string
 		wantBoard    StubBoard
 		wantCaptured chessgo.Piece
-		wantErr      chessgo.Error
+		wantErr      string
 	}{
 		{
 			board:     StubBoard{squares: []byte("P   ")},
@@ -71,7 +71,7 @@ func TestGameMove(t *testing.T) {
 			turn:      chessgo.Black,
 			move:      "Bxb2",
 			wantBoard: StubBoard{squares: []byte("b  n")},
-			wantErr:   chessgo.ErrorFriendlyFire{},
+			wantErr:   "attempt to capture own piece",
 		},
 		{
 			board:     StubBoard{squares: []byte("    P           ")},
@@ -134,16 +134,81 @@ func TestGameMove(t *testing.T) {
 			move:      "Bd1",
 			wantBoard: StubBoard{squares: []byte("   B            ")},
 		},
+		{
+			board:     StubBoard{squares: []byte("Q      k ")},
+			move:      "Qc3+",
+			wantBoard: StubBoard{squares: []byte("       kQ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("K   ")},
+			move:      "Kb1",
+			wantBoard: StubBoard{squares: []byte(" K  ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("   k")},
+			turn:      chessgo.Black,
+			move:      "Kb1",
+			wantBoard: StubBoard{squares: []byte(" k  ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("K   ")},
+			move:      "Kb2",
+			wantBoard: StubBoard{squares: []byte("   K")},
+		},
+		{
+			board:     StubBoard{squares: []byte("N        ")},
+			move:      "Nb3",
+			wantBoard: StubBoard{squares: []byte("       N ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("n        ")},
+			turn:      chessgo.Black,
+			move:      "Nc2",
+			wantBoard: StubBoard{squares: []byte("     n   ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("       N ")},
+			move:      "Na1",
+			wantBoard: StubBoard{squares: []byte("N        ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("     n   ")},
+			turn:      chessgo.Black,
+			move:      "Na1",
+			wantBoard: StubBoard{squares: []byte("n        ")},
+		},
+
+		{
+			board:     StubBoard{squares: []byte("Q        ")},
+			move:      "Qa3",
+			wantBoard: StubBoard{squares: []byte("      Q  ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("   q     ")},
+			turn:      chessgo.Black,
+			move:      "Qc2",
+			wantBoard: StubBoard{squares: []byte("     q   ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("R        ")},
+			move:      "Ra3",
+			wantBoard: StubBoard{squares: []byte("      R  ")},
+		},
+		{
+			board:     StubBoard{squares: []byte("RP R             ")},
+			move:      "Rc1",
+			wantBoard: StubBoard{squares: []byte("RPR              ")},
+		},
 	}
 
 	for _, tC := range testCases {
-		desc := fmt.Sprintf("move %s", tC.move)
+		desc := fmt.Sprintf("move %s / %s", tC.move, tC.turn.String())
 		t.Run(desc, func(t *testing.T) {
 			g := chessgo.Game{Board: &tC.board, Turn: tC.turn}
 			captured, err := g.Move(tC.move)
 
-			if err != tC.wantErr {
-				t.Errorf("got err %v wanted %v", err, tC.wantErr)
+			if err != nil && !strings.Contains(err.Error(), tC.wantErr) {
+				t.Errorf("got err %T/%v wanted %v", err, err, tC.wantErr)
 			}
 
 			if !reflect.DeepEqual(g.Board, &tC.wantBoard) {
@@ -183,7 +248,7 @@ func (b *StubBoard) InBounds(addr string) bool {
 	rank := addr[1]
 
 	r := file >= 'a' && rank >= '1' && file <= byte(b.MaxFile()) && rank <= byte(b.MaxRank())
-	log.Printf("InBounds(%s) -> %v", addr, r)
+	// log.Printf("InBounds(%s) -> %v", addr, r)
 	return r
 }
 
@@ -197,7 +262,7 @@ func (b *StubBoard) SetSquare(addr string, piece chessgo.Piece) {
 
 func (b *StubBoard) Move(srcAddr, dstAddr string) chessgo.Piece {
 	captured := b.GetSquare(dstAddr)
-	log.Printf("Moving %q (%d) to %q (%d)", srcAddr, b.getIndex(srcAddr), dstAddr, b.getIndex(dstAddr))
+	// log.Printf("Moving %q (%d) to %q (%d)", srcAddr, b.getIndex(srcAddr), dstAddr, b.getIndex(dstAddr))
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
 	b.SetSquare(srcAddr, chessgo.NoPiece)
 	return captured
@@ -209,15 +274,23 @@ func (b *StubBoard) String() string {
 
 func (b *StubBoard) MaxFile() rune {
 	m := rune(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
-	log.Printf("MaxFile: %c", m)
+	// log.Printf("MaxFile: %c", m)
 	return m
 }
 
 func (b *StubBoard) MaxRank() rune {
-	log.Printf("MaxRank: len(squares): %d", len(b.squares))
+	// log.Printf("MaxRank: len(squares): %d", len(b.squares))
 	m := rune(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
-	log.Printf("MaxRank: %c", m)
+	// log.Printf("MaxRank: %c", m)
 	return m
+}
+
+func (b *StubBoard) InCheck(color chessgo.Color) bool {
+	return false
+}
+
+func (b *StubBoard) Mated(color chessgo.Color) bool {
+	return false
 }
 
 func (b *StubBoard) getIndex(addr string) uint8 {
@@ -249,7 +322,7 @@ func (b *StubBoard) getIndex(addr string) uint8 {
 	}
 
 	idx := y*uint8(math.Sqrt(float64(len(b.squares)))) + x
-	log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
+	// log.Printf("%q => x=%d, y=%d, idx=%d, len(b.squares)=%d", addr, x, y, idx, len(b.squares))
 	if idx >= uint8(len(b.squares)) {
 		panic("idx >= len(b.squares)")
 	}

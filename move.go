@@ -3,162 +3,160 @@ package chessgo
 import (
 	"bytes"
 	"fmt"
-	"log"
 )
 
-type move struct {
-	srcAddr  string
-	dstFile  byte
-	dstRank  byte
-	dstAddr  string
-	piece    Piece
-	replaced Piece
-	capture  bool
-	error    error
+type MoveInfo struct {
+	piece         Piece
+	dstAddr       string
+	srcAddr       string
+	captured      Piece
+	expectCapture bool
+	check         bool
+	mate          bool
 }
 
-func parseMove(moveStr string, g *Game) (mv move) {
-	mv.piece = Pawn(g.Turn)
-	mv.replaced = NoPiece
-
-	if err := parseDst(moveStr, &mv, g); err != nil {
-		return
+func parseMove(move string, g Game) (*MoveInfo, error) {
+	mi, err := parseDst(move, g)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse dst from %q: %v", move, err)
 	}
 
-	// log.Printf("Moving %c to %s", mv.piece, mv.dstAddr)
-
-	switch mv.piece {
-	case WhitePawn, BlackPawn:
-		findPawnSrc(&mv, g)
-		return
-	case WhiteBishop, BlackBishop:
-		findBishopSrc(&mv, g)
-		return
-	default:
-		panic(fmt.Sprintf("Unhandled Piece: %c", mv.piece))
+	// todo: *yuck
+	src, err := findSrc(*mi, g)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't find src for %q: %v", move, err)
 	}
+
+	mi.srcAddr = src
+	return mi, nil
 }
 
-func parseDst(moveStr string, mv *move, g *Game) error {
+func parseDst(move string, g Game) (*MoveInfo, error) {
+	mi := MoveInfo{piece: Pawn(g.Turn), captured: NoPiece}
+
 	dstAddrBuf := bytes.Buffer{}
 
-	for i := len(moveStr) - 1; i >= 0; i-- {
+	if move[len(move)-1:] == "+" {
+		mi.check = true
+		move = move[:len(move)-1]
+	}
+
+	if move[len(move)-1:] == "#" {
+		mi.check = true
+		mi.mate = true
+		move = move[:len(move)-1]
+	}
+
+	for i := len(move) - 1; i >= 0; i-- {
 		if dstAddrBuf.Len() < 2 {
-			dstAddrBuf.WriteByte(moveStr[i])
+			dstAddrBuf.WriteByte(move[i])
 		} else {
-			switch moveStr[i] {
+			switch move[i] {
 			case 'x':
-				mv.capture = true
+				mi.expectCapture = true
 			case 'B':
-				mv.piece = Bishop(g.Turn)
+				mi.piece = Bishop(g.Turn)
+			case 'Q':
+				mi.piece = Queen(g.Turn)
+			case 'K':
+				mi.piece = King(g.Turn)
+			case 'N':
+				mi.piece = Knight(g.Turn)
+			case 'R':
+				mi.piece = Rook(g.Turn)
 			}
 		}
 	}
 
-	mv.dstFile, mv.dstRank = dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0]
+	mi.dstAddr = NewAddress(dstAddrBuf.Bytes()[1], dstAddrBuf.Bytes()[0])
+	mi.captured = g.Board.GetSquare(mi.dstAddr)
 
-	mv.dstAddr = fmt.Sprintf("%c%c", mv.dstFile, mv.dstRank)
-	mv.replaced = g.Board.GetSquare(mv.dstAddr)
-
-	if mv.replaced != NoPiece && ColorOf(mv.replaced) == g.Turn {
-		mv.error = ErrorFriendlyFire{}
+	if mi.captured != NoPiece && ColorOf(mi.captured) == g.Turn {
+		return nil, fmt.Errorf("attempt to capture own piece at %q with %c", mi.dstAddr, mi.piece)
 	}
 
-	return mv.error
+	return &mi, nil
 }
 
-func isSrc(mv *move, file, rank byte, g *Game) bool {
-	srcAddr := fmt.Sprintf("%c%c", file, rank)
-	if g.Board.InBounds(srcAddr) && g.Board.GetSquare(srcAddr) == mv.piece {
-		mv.srcAddr = srcAddr
-		return true
+func findSrc(mi MoveInfo, g Game) (string, error) {
+	var srcAddr string
+
+	switch mi.piece {
+	case WhitePawn, BlackPawn:
+		srcAddr, _ = findPawnSrc(mi, g)
+	case WhiteBishop, BlackBishop:
+		srcAddr = findDiagonalSrc(mi.dstAddr, mi.piece, g.Board)
+	case WhiteQueen, BlackQueen:
+		srcAddr = findDiagonalSrc(mi.dstAddr, mi.piece, g.Board)
+		if srcAddr == "" {
+			srcAddr = findHorizontalSrc(mi.dstAddr, mi.piece, g.Board)
+		}
+	case WhiteKing, BlackKing:
+		srcAddr = findKingSrc(mi.dstAddr, mi.piece, g.Board)
+	case WhiteKnight, BlackKnight:
+		srcAddr = findKnightSrc(mi.dstAddr, mi.piece, g.Board)
+	case WhiteRook, BlackRook:
+		srcAddr = findHorizontalSrc(mi.dstAddr, mi.piece, g.Board)
+	default:
+		return "", fmt.Errorf("unhandled Piece: %c", mi.piece)
 	}
-	return false
+
+	if srcAddr == "" {
+		return "", fmt.Errorf("could not find source %v for dest %s", mi.piece, mi.dstAddr)
+	}
+
+	return srcAddr, nil
 }
 
-func findPawnSrc(mv *move, g *Game) {
-	switch mv.piece {
+func findPawnSrc(mi MoveInfo, g Game) (string, error) {
+	isSrc := func(mi MoveInfo, addr string, g Game) bool {
+		return g.Board.InBounds(addr) && g.Board.GetSquare(addr) == mi.piece
+	}
+
+	switch mi.piece {
 	case WhitePawn:
-		if mv.capture {
-			if isSrc(mv, bytePlus(mv.dstFile, -1), bytePlus(mv.dstRank, -1), g) {
-				return
+		if mi.expectCapture {
+			for _, incs := range []increments{{-1, -1}, {1, -1}} {
+				addr := addressPlus(mi.dstAddr, incs.incX, incs.incY)
+				if isSrc(mi, addr, g) {
+					return addr, nil
+				}
 			}
-			if isSrc(mv, bytePlus(mv.dstFile, 1), bytePlus(mv.dstRank, -1), g) {
-				return
-			}
-			panic("Illegal move.")
+			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		if isSrc(mv, mv.dstFile, bytePlus(mv.dstRank, -1), g) {
-			return
+		addr := addressPlus(mi.dstAddr, 0, -1)
+		if isSrc(mi, addr, g) {
+			return addr, nil
 		}
-		homeRank := byte('2') // where the white pawn starts the game
-		log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, 2), mv.dstFile)
-		if mv.dstRank == bytePlus(homeRank, 2) && isSrc(mv, mv.dstFile, homeRank, g) {
-			return
+
+		// first White pawn move can be 2 squares starting from rank 2
+		addr = NewAddress(AddressFile(mi.dstAddr), '2')
+		if AddressRank(mi.dstAddr) == '4' && isSrc(mi, addr, g) {
+			return addr, nil
 		}
 	case BlackPawn:
-		if mv.capture {
-			if isSrc(mv, bytePlus(mv.dstFile, 1), bytePlus(mv.dstRank, 1), g) {
-				return
+		if mi.expectCapture {
+			for _, incs := range []increments{{1, 1}, {-1, 1}} {
+				addr := addressPlus(mi.dstAddr, incs.incX, incs.incY)
+				if isSrc(mi, addr, g) {
+					return addr, nil
+				}
 			}
-			if isSrc(mv, bytePlus(mv.dstFile, -1), bytePlus(mv.dstRank, 1), g) {
-				return
-			}
-			panic("Illegal move.")
+			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		if isSrc(mv, mv.dstFile, bytePlus(mv.dstRank, 1), g) {
-			return
-		}
-		homeRank := bytePlus(byte(g.Board.MaxRank()), -1) // where the black pawn starts the game
-		log.Printf("homeRank: %c, other: %c, other: %c", homeRank, bytePlus(homeRank, -2), mv.dstFile)
-		if mv.dstRank == bytePlus(homeRank, -2) && isSrc(mv, mv.dstFile, homeRank, g) {
-			return
+		addr := addressPlus(mi.dstAddr, 0, 1)
+		if isSrc(mi, addr, g) {
+			return addr, nil
 		}
 
-	default:
-		panic("WTF")
-	}
-}
-
-func bytePlus(b byte, n int8) byte {
-	return byte(int8(b) + n)
-}
-
-func addrPlus(addr string, incX, incY int8) string {
-	return fmt.Sprintf("%c%c", bytePlus(addr[0], incX), bytePlus(addr[1], incY))
-}
-
-func findBishopSrc(mv *move, g *Game) {
-	log.Printf("findBishopSrc(%s)", mv.dstAddr)
-	diagonals := []struct {
-		incX int8
-		incY int8
-	}{
-		{
-			-1, -1,
-		},
-		{
-			1, 1,
-		},
-		{
-			1, -1,
-		},
-		{
-			-1, 1,
-		},
+		// first Black pawn move can be 2 squares starting from Board.MaxRank() - 1
+		addr = NewAddress(AddressFile(mi.dstAddr), byte(g.Board.MaxRank())-1)
+		if AddressRank(mi.dstAddr) == byte(g.Board.MaxRank()-3) && isSrc(mi, addr, g) {
+			return addr, nil
+		}
 	}
 
-	for _, diag := range diagonals {
-		incX, incY := diag.incX, diag.incY
-		log.Printf(" incX/incY=%d/%d", incX, incY)
-		for addr := addrPlus(mv.dstAddr, incX, incY); g.Board.InBounds(addr); addr = addrPlus(addr, incX, incY) {
-			if isSrc(mv, addr[0], addr[1], g) {
-				log.Printf("Found at %q", addr)
-				return
-			}
-		}
-	}
-	// other cases not tested
+	return "", fmt.Errorf("couldn't find Pawn src for %q", mi.dstAddr)
 }
