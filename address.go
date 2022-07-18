@@ -14,7 +14,7 @@ func AddressRank(addr string) byte {
 	return addr[1]
 }
 
-func AddressPlus(addr string, incX, incY int8) string {
+func addressPlus(addr string, incX, incY int8) string {
 	bytePlus := func(b byte, n int8) byte {
 		return byte(int8(b) + n)
 	}

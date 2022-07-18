@@ -14,10 +14,6 @@ type MoveInfo struct {
 	check         bool
 }
 
-type increments struct {
-	incX, incY int8
-}
-
 func parseMove(move string, g Game) (*MoveInfo, error) {
 	mi, err := parseDst(move, g)
 	if err != nil {
@@ -76,41 +72,45 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 }
 
 func findSrc(mi MoveInfo, g Game) (string, error) {
+	var srcAddr string
+
 	switch mi.piece {
 	case WhitePawn, BlackPawn:
-		return findPawnSrc(mi, g)
+		srcAddr, _ = findPawnSrc(mi, g)
 	case WhiteBishop, BlackBishop:
-		return findDiagonalSrc(mi, g)
+		srcAddr = findDiagonalSrc(mi.dstAddr, mi.piece, g.Board)
 	case WhiteQueen, BlackQueen:
-		src, err := findDiagonalSrc(mi, g)
-		if err != nil {
-			return findHorizontalSrc(mi, g)
+		srcAddr = findDiagonalSrc(mi.dstAddr, mi.piece, g.Board)
+		if srcAddr == "" {
+			srcAddr = findHorizontalSrc(mi.dstAddr, mi.piece, g.Board)
 		}
-		return src, nil
 	case WhiteKing, BlackKing:
-		return findKingSrc(mi, g)
+		srcAddr = findKingSrc(mi.dstAddr, mi.piece, g.Board)
 	case WhiteKnight, BlackKnight:
-		return findKnightSrc(mi, g)
+		srcAddr = findKnightSrc(mi.dstAddr, mi.piece, g.Board)
 	case WhiteRook, BlackRook:
-		return findHorizontalSrc(mi, g)
+		srcAddr = findHorizontalSrc(mi.dstAddr, mi.piece, g.Board)
 	default:
 		return "", fmt.Errorf("unhandled Piece: %c", mi.piece)
 	}
-}
 
-func isSrc(mi MoveInfo, srcAddr string, g Game) bool {
-	if g.Board.InBounds(srcAddr) && g.Board.GetSquare(srcAddr) == mi.piece {
-		return true
+	if srcAddr == "" {
+		return "", fmt.Errorf("could not find source %v for dest %s", mi.piece, mi.dstAddr)
 	}
-	return false
+
+	return srcAddr, nil
 }
 
 func findPawnSrc(mi MoveInfo, g Game) (string, error) {
+	isSrc := func(mi MoveInfo, addr string, g Game) bool {
+		return g.Board.InBounds(addr) && g.Board.GetSquare(addr) == mi.piece
+	}
+
 	switch mi.piece {
 	case WhitePawn:
 		if mi.expectCapture {
 			for _, incs := range []increments{{-1, -1}, {1, -1}} {
-				addr := AddressPlus(mi.dstAddr, incs.incX, incs.incY)
+				addr := addressPlus(mi.dstAddr, incs.incX, incs.incY)
 				if isSrc(mi, addr, g) {
 					return addr, nil
 				}
@@ -118,7 +118,7 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		addr := AddressPlus(mi.dstAddr, 0, -1)
+		addr := addressPlus(mi.dstAddr, 0, -1)
 		if isSrc(mi, addr, g) {
 			return addr, nil
 		}
@@ -131,7 +131,7 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 	case BlackPawn:
 		if mi.expectCapture {
 			for _, incs := range []increments{{1, 1}, {-1, 1}} {
-				addr := AddressPlus(mi.dstAddr, incs.incX, incs.incY)
+				addr := addressPlus(mi.dstAddr, incs.incX, incs.incY)
 				if isSrc(mi, addr, g) {
 					return addr, nil
 				}
@@ -139,7 +139,7 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
 		}
 
-		addr := AddressPlus(mi.dstAddr, 0, 1)
+		addr := addressPlus(mi.dstAddr, 0, 1)
 		if isSrc(mi, addr, g) {
 			return addr, nil
 		}
@@ -152,59 +152,4 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 	}
 
 	return "", fmt.Errorf("couldn't find Pawn src for %q", mi.dstAddr)
-}
-
-func findDiagonalSrc(mi MoveInfo, g Game) (string, error) {
-	return findSrcOnLines(mi, g, []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}})
-}
-
-func findHorizontalSrc(mi MoveInfo, g Game) (string, error) {
-	return findSrcOnLines(mi, g, []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}})
-}
-
-func findSrcOnLines(mi MoveInfo, g Game, incs []increments) (string, error) {
-	for _, incs := range incs {
-		if srcAddr := findSrcOnLine(mi, g, incs.incX, incs.incY); srcAddr != "" {
-			return srcAddr, nil
-		}
-	}
-
-	return "", fmt.Errorf("couldn't find a horizontal source for %s", mi.dstAddr)
-}
-
-func findSrcOnLine(mi MoveInfo, g Game, incX, incY int8) string {
-	for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
-		switch g.Board.GetSquare(addr) {
-		case mi.piece:
-			return addr
-		case NoPiece:
-			continue
-		default:
-			// move is blocked by some piece
-			return ""
-		}
-	}
-	return ""
-}
-
-func findKingSrc(mi MoveInfo, g Game) (string, error) {
-	for _, offs := range []increments{{-1, -1}, {-1, 0}, {0, -1}, {-1, 1}, {1, -1}, {1, 0}, {1, 1}, {0, 1}} {
-		addr := AddressPlus(mi.dstAddr, offs.incX, offs.incY)
-		if g.Board.InBounds(addr) && isSrc(mi, addr, g) {
-			return addr, nil
-		}
-	}
-
-	return "", fmt.Errorf("couldn't find a King source for %s", mi.dstAddr)
-}
-
-func findKnightSrc(mi MoveInfo, g Game) (string, error) {
-	for _, offs := range []increments{{-1, -2}, {-2, -1}, {1, -2}, {2, -1}, {1, 2}, {2, 1}, {-1, 2}, {-2, 1}} {
-		addr := AddressPlus(mi.dstAddr, offs.incX, offs.incY)
-		if g.Board.InBounds(addr) && isSrc(mi, addr, g) {
-			return addr, nil
-		}
-	}
-
-	return "", fmt.Errorf("couldn't find a Knight source for %s", mi.dstAddr)
 }
