@@ -71,6 +71,38 @@ func Test(t *testing.T) {
 			move:      "d3",
 			wantBoard: "RNBQ K RPPP   PP   P N      Pp   B           n qp pp ppprnb kb r",
 		},
+		{
+			move:      "Nh5",
+			wantBoard: "RNBQ K RPPP   PP   P N      Pp   B     n       qp pp ppprnb kb r",
+		},
+		{
+			move:      "Nh4",
+			wantBoard: "RNBQ K RPPP   PP   P        Pp N B     n       qp pp ppprnb kb r",
+		},
+		{
+			move:      "Qg5",
+			wantBoard: "RNBQ K RPPP   PP   P        Pp N B    qn        p pp ppprnb kb r",
+		},
+		{
+			move:      "Nf5",
+			wantBoard: "RNBQ K RPPP   PP   P        Pp   B   Nqn        p pp ppprnb kb r",
+		},
+		{
+			move:      "c6",
+			wantBoard: "RNBQ K RPPP   PP   P        Pp   B   Nqn  p     p  p ppprnb kb r",
+		},
+		{
+			move:      "g4",
+			wantBoard: "RNBQ K RPPP    P   P        PpP  B   Nqn  p     p  p ppprnb kb r",
+		},
+		{
+			move:      "Nf6",
+			wantBoard: "RNBQ K RPPP    P   P        PpP  B   Nq   p  n  p  p ppprnb kb r",
+		},
+		// {
+		// 	move:      "Rg1",
+		// 	wantBoard: "RNBQ KR PPP    P   P        PpP  B   Nq   p  n  p  p ppprnb kb r",
+		// },
 	}
 
 	board := chessgo.NewBoard()
