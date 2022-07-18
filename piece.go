@@ -73,6 +73,17 @@ func Knight(color Color) Piece {
 	}
 }
 
+func Rook(color Color) Piece {
+	switch color {
+	case White:
+		return WhiteRook
+	case Black:
+		return BlackRook
+	default:
+		panic("Invalid color")
+	}
+}
+
 func validPiece(p Piece) bool {
 	switch p {
 	case NoPiece,

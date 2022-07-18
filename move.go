@@ -59,6 +59,8 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 				mi.piece = King(g.Turn)
 			case 'N':
 				mi.piece = Knight(g.Turn)
+			case 'R':
+				mi.piece = Rook(g.Turn)
 			}
 		}
 	}
@@ -89,6 +91,8 @@ func findSrc(mi MoveInfo, g Game) (string, error) {
 		return findKingSrc(mi, g)
 	case WhiteKnight, BlackKnight:
 		return findKnightSrc(mi, g)
+	case WhiteRook, BlackRook:
+		return findHorizontalSrc(mi, g)
 	default:
 		return "", fmt.Errorf("unhandled Piece: %c", mi.piece)
 	}
