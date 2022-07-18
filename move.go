@@ -155,36 +155,36 @@ func findPawnSrc(mi MoveInfo, g Game) (string, error) {
 }
 
 func findDiagonalSrc(mi MoveInfo, g Game) (string, error) {
-	for _, diag := range []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}} {
-		incX, incY := diag.incX, diag.incY
-		for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
-			if isSrc(mi, addr, g) {
-				return addr, nil
-			}
-		}
-	}
-
-	return "", fmt.Errorf("couldn't find a diagonal source for %s", mi.dstAddr)
+	return findSrcOnLines(mi, g, []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}})
 }
 
 func findHorizontalSrc(mi MoveInfo, g Game) (string, error) {
-	for _, incs := range []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
-		incX, incY := incs.incX, incs.incY
-	MoveLine:
-		for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
-			switch g.Board.GetSquare(addr) {
-			case mi.piece:
-				return addr, nil
-			case NoPiece:
-				continue
-			default:
-				// move is blocked by some piece
-				break MoveLine
-			}
+	return findSrcOnLines(mi, g, []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}})
+}
+
+func findSrcOnLines(mi MoveInfo, g Game, incs []increments) (string, error) {
+	for _, incs := range incs {
+		if srcAddr := findSrcOnLine(mi, g, incs.incX, incs.incY); srcAddr != "" {
+			return srcAddr, nil
 		}
 	}
 
 	return "", fmt.Errorf("couldn't find a horizontal source for %s", mi.dstAddr)
+}
+
+func findSrcOnLine(mi MoveInfo, g Game, incX, incY int8) string {
+	for addr := AddressPlus(mi.dstAddr, incX, incY); g.Board.InBounds(addr); addr = AddressPlus(addr, incX, incY) {
+		switch g.Board.GetSquare(addr) {
+		case mi.piece:
+			return addr
+		case NoPiece:
+			continue
+		default:
+			// move is blocked by some piece
+			return ""
+		}
+	}
+	return ""
 }
 
 func findKingSrc(mi MoveInfo, g Game) (string, error) {
