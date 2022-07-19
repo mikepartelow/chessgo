@@ -21,13 +21,13 @@ func parseMove(move string, g Game) (*MoveInfo, error) {
 		return nil, fmt.Errorf("could not parse dst from %q: %v", move, err)
 	}
 
-	// todo: *yuck
-	src, err := findSrc(*mi, g)
-	if err != nil {
+	srcAddr := mi.piece.SourceForDest(mi.dstAddr, g.Board)
+	if srcAddr == "" {
 		return nil, fmt.Errorf("couldn't find src for %q: %v", move, err)
 	}
 
-	mi.srcAddr = src
+	mi.srcAddr = srcAddr
+
 	return mi, nil
 }
 
@@ -78,85 +78,39 @@ func parseDst(move string, g Game) (*MoveInfo, error) {
 	return &mi, nil
 }
 
-func findSrc(mi MoveInfo, g Game) (Address, error) {
-	var srcAddr Address
-
-	switch mi.piece.(type) {
-	case WhitePawn, BlackPawn:
-		srcAddr, _ = findPawnSrc(mi, g)
-	case WhiteBishop, BlackBishop:
-		srcAddr = findDiagonalSrc(mi.dstAddr, mi.piece, g.Board)
-	case WhiteQueen, BlackQueen:
-		srcAddr = findDiagonalSrc(mi.dstAddr, mi.piece, g.Board)
-		if srcAddr == "" {
-			srcAddr = findHorizontalSrc(mi.dstAddr, mi.piece, g.Board)
-		}
-	case WhiteKing, BlackKing:
-		srcAddr = findKingSrc(mi.dstAddr, mi.piece, g.Board)
-	case WhiteKnight, BlackKnight:
-		srcAddr = findKnightSrc(mi.dstAddr, mi.piece, g.Board)
-	case WhiteRook, BlackRook:
-		srcAddr = findHorizontalSrc(mi.dstAddr, mi.piece, g.Board)
-	default:
-		return "", fmt.Errorf("unhandled Piece: %c", mi.piece)
-	}
-
-	if srcAddr == "" {
-		return "", fmt.Errorf("could not find source %v for dest %s", mi.piece, mi.dstAddr)
-	}
-
-	return srcAddr, nil
+type increments struct {
+	incX, incY int8
 }
 
-func findPawnSrc(mi MoveInfo, g Game) (Address, error) {
-	isSrc := func(mi MoveInfo, addr Address, g Game) bool {
-		return g.Board.InBounds(addr) && g.Board.GetSquare(addr) == mi.piece
-	}
+func findDiagonalSrc(dstAddr Address, piece Piece, board Board) Address {
+	return findSrcOnLines(dstAddr, piece, board, []increments{{-1, -1}, {1, 1}, {1, -1}, {-1, 1}})
+}
 
-	switch mi.piece.(type) {
-	case WhitePawn:
-		if mi.expectCapture {
-			for _, incs := range []increments{{-1, -1}, {1, -1}} {
-				addr := mi.dstAddr.Plus(incs.incX, incs.incY)
-				if isSrc(mi, addr, g) {
-					return addr, nil
-				}
-			}
-			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
-		}
+func findHorizontalSrc(dstAddr Address, piece Piece, board Board) Address {
+	return findSrcOnLines(dstAddr, piece, board, []increments{{-1, 0}, {1, 0}, {0, -1}, {0, 1}})
+}
 
-		addr := mi.dstAddr.Plus(0, -1)
-		if isSrc(mi, addr, g) {
-			return addr, nil
-		}
-
-		// first White pawn move can be 2 squares starting from rank 2
-		addr = NewAddress(mi.dstAddr.File(), '2')
-		if mi.dstAddr.Rank() == '4' && isSrc(mi, addr, g) {
-			return addr, nil
-		}
-	case BlackPawn:
-		if mi.expectCapture {
-			for _, incs := range []increments{{1, 1}, {-1, 1}} {
-				addr := mi.dstAddr.Plus(incs.incX, incs.incY)
-				if isSrc(mi, addr, g) {
-					return addr, nil
-				}
-			}
-			return "", fmt.Errorf("expected capture, but no capture possible to %s", mi.dstAddr)
-		}
-
-		addr := mi.dstAddr.Plus(0, 1)
-		if isSrc(mi, addr, g) {
-			return addr, nil
-		}
-
-		// first Black pawn move can be 2 squares starting from Board.MaxRank() - 1
-		addr = NewAddress(mi.dstAddr.File(), byte(g.Board.MaxRank())-1)
-		if mi.dstAddr.Rank() == byte(g.Board.MaxRank()-3) && isSrc(mi, addr, g) {
-			return addr, nil
+func findSrcOnLines(dstAddr Address, piece Piece, board Board, incs []increments) Address {
+	for _, incs := range incs {
+		if srcAddr := findSrcOnLine(dstAddr, piece, board, incs.incX, incs.incY); srcAddr != "" {
+			return srcAddr
 		}
 	}
 
-	return "", fmt.Errorf("couldn't find Pawn src for %q", mi.dstAddr)
+	return ""
+}
+
+func findSrcOnLine(dstAddr Address, piece Piece, board Board, incX, incY int8) Address {
+	for addr := dstAddr.Plus(incX, incY); board.InBounds(addr); addr = addr.Plus(incX, incY) {
+		switch board.GetSquare(addr) {
+		case piece:
+			return addr
+		case nil:
+			continue
+		default:
+			// move is blocked by some piece
+			return ""
+		}
+	}
+	return ""
 }

@@ -78,7 +78,7 @@ func (b *StandardBoard) InCheck(color Color) bool {
 	return b.inCheckHorizontal(kingAddr, Queen(color.Opponent())) ||
 		findDiagonalSrc(kingAddr, Queen(color.Opponent()), b) != "" ||
 		findDiagonalSrc(kingAddr, Bishop(color.Opponent()), b) != "" ||
-		findKnightSrc(kingAddr, Knight(color.Opponent()), b) != ""
+		Knight(color.Opponent()).SourceForDest(kingAddr, b) != ""
 }
 
 func (b *StandardBoard) findKing(color Color) (addr Address) {
