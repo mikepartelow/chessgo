@@ -1,22 +1,12 @@
 package chessgo_test
 
 import (
-	"fmt"
 	"mp/chessgo"
-	"testing"
 )
 
 // https://www.chessgames.com/perl/chessgame?gid=1018910
 
-type moveExpectation struct {
-	move         string
-	wantBoard    string
-	wantCaptured chessgo.Piece
-	wantCheck    bool
-	wantMate     bool
-}
-
-var immortalGameMoves = []moveExpectation{
+var theImmortalGameMoveExpectations = []moveExpectation{
 	{
 		move:      "e4",
 		wantBoard: "RNBQKBNRPPPP PPP            P                   pppppppprnbqkbnr",
@@ -212,57 +202,4 @@ var immortalGameMoves = []moveExpectation{
 		wantCheck: true,
 		wantMate:  true,
 	},
-}
-
-func TestTheImmortalGame(t *testing.T) {
-	t.Run("from memory", func(t *testing.T) {
-		board := chessgo.NewBoard()
-		game := &chessgo.Game{Board: board}
-
-		for moveIndex, tC := range immortalGameMoves {
-			desc := fmt.Sprintf("move index %d %s", moveIndex, tC.move)
-			t.Run(desc, func(t *testing.T) {
-				assertMoveExpectation(t, tC, game)
-			})
-		}
-	})
-}
-
-func assertCaptured(t *testing.T, got, want chessgo.Piece) {
-	t.Helper()
-
-	if got != want {
-		t.Fatalf("got %q captured, wanted %q", got, want)
-	}
-}
-
-func assertBoard(t *testing.T, got, want string) {
-	t.Helper()
-	if got != want {
-		t.Fatalf("got Board %q, wanted %q", got, want)
-	}
-}
-
-func assertCheck(t *testing.T, got, want bool) {
-	t.Helper()
-	if got != want {
-		t.Fatalf("got check == %v, wanted %v", got, want)
-	}
-}
-
-func assertMoveExpectation(t *testing.T, me moveExpectation, game *chessgo.Game) {
-	t.Helper()
-
-	captured, err := game.Move(me.move)
-
-	assertNoError(t, err)
-	assertCaptured(t, captured, me.wantCaptured)
-	assertBoard(t, game.Board.String(), me.wantBoard)
-	assertCheck(t, game.Board.InCheck(game.Turn), me.wantCheck)
-
-	//todo: check for mate!
-	// gotMate := game.Board.Mated(game.Turn)
-	// if gotMate != tC.wantMate {
-	// 	t.Fatalf("Wanted mate == %v but Board reports mate == %v.", tC.wantMate, gotMate)
-	// }
 }

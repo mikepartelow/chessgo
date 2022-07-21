@@ -111,11 +111,11 @@ func TestPgn(t *testing.T) {
 		f := mustOpen(t, theImmortalGamePgnPath)
 		_, pgnMoves, _ := chessgo.ParsePGN(f)
 
-		if len(pgnMoves) != len(immortalGameMoves) {
-			t.Fatalf("got %d moves from %s, wanted %d", len(pgnMoves), theImmortalGamePgnPath, len(immortalGameMoves))
+		if len(pgnMoves) != len(theImmortalGameMoveExpectations) {
+			t.Fatalf("got %d moves from %s, wanted %d", len(pgnMoves), theImmortalGamePgnPath, len(theImmortalGameMoveExpectations))
 		}
 
-		for moveIndex, tC := range immortalGameMoves {
+		for moveIndex, tC := range theImmortalGameMoveExpectations {
 			desc := fmt.Sprintf("move index %d %s", moveIndex, tC.move)
 			t.Run(desc, func(t *testing.T) {
 				if pgnMoves[moveIndex] != tC.move {
