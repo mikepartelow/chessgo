@@ -1,12 +1,15 @@
 package chessgo_test
 
 import (
+	"fmt"
 	"mp/chessgo"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+const theImmortalGamePgnPath = "games/the_immortal_game.pgn"
 
 // https://en.wikipedia.org/wiki/Portable_Game_Notation
 
@@ -96,12 +99,31 @@ func TestPgn(t *testing.T) {
 			"e4", "e5", "f4", "exf4", "Bc4", "Qh4+", "Kf1", "b5", "Bxb5", "Nf6", "Nf3", "Qh6", "d3", "Nh5", "Nh4", "Qg5", "Nf5", "c6", "g4", "Nf6", "Rg1", "cxb5", "h4", "Qg6", "h5", "Qg5", "Qf3", "Ng8", "Bxf4", "Qf6", "Nc3", "Bc5", "Nd5", "Qxb2", "Bd6", "Bxg1", "e5", "Qxa1+", "Ke2", "Na6", "Nxg7+", "Kd8", "Qf6+", "Nxf6", "Be7#",
 		}
 
-		f := mustOpen(t, "games/the_immortal_game.pgn")
+		f := mustOpen(t, theImmortalGamePgnPath)
 		gotTags, gotMoves, err := chessgo.ParsePGN(f)
 
 		assertNoError(t, err)
 		assertTags(t, gotTags, wantTags)
 		assertMoves(t, gotMoves, wantMoves)
+	})
+
+	t.Run("it has the right moves", func(t *testing.T) {
+		f := mustOpen(t, theImmortalGamePgnPath)
+		_, pgnMoves, _ := chessgo.ParsePGN(f)
+
+		if len(pgnMoves) != len(immortalGameMoves) {
+			t.Fatalf("got %d moves from %s, wanted %d", len(pgnMoves), theImmortalGamePgnPath, len(immortalGameMoves))
+		}
+
+		for moveIndex, tC := range immortalGameMoves {
+			desc := fmt.Sprintf("move index %d %s", moveIndex, tC.move)
+			t.Run(desc, func(t *testing.T) {
+				if pgnMoves[moveIndex] != tC.move {
+					t.Fatalf("got move %q from %s, wanted %s", pgnMoves[moveIndex], theImmortalGamePgnPath, tC.move)
+				}
+			})
+		}
+
 	})
 
 	// t.Run("it parses tags plus movetext", func(t *testing.T) {
@@ -122,7 +144,7 @@ func mustOpen(t *testing.T, path string) *os.File {
 	t.Helper()
 	f, err := os.Open(path)
 	if err != nil {
-		t.Errorf("couldn't open %s: %v", path, err)
+		t.Fatalf("couldn't open %s: %v", path, err)
 	}
 	return f
 }
