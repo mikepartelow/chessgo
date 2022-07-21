@@ -215,7 +215,6 @@ var immortalGameMoves = []moveExpectation{
 }
 
 func TestTheImmortalGame(t *testing.T) {
-
 	t.Run("from memory", func(t *testing.T) {
 		board := chessgo.NewBoard()
 		game := &chessgo.Game{Board: board}
