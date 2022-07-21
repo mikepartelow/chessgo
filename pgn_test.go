@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+// https://en.wikipedia.org/wiki/Portable_Game_Notation
+
 // [Event "F/S Return Match"]
 // [Site "Belgrade, Serbia JUG"]
 // [Date "1992.11.04"]
@@ -74,7 +76,6 @@ func TestPgn(t *testing.T) {
 				assertNoError(t, err)
 				assertMoves(t, got, tC.wantMoves)
 			})
-
 		}
 	})
 
