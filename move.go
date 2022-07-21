@@ -6,16 +6,21 @@ import (
 )
 
 type MoveInfo struct {
-	piece         Piece
-	dstAddr       Address
-	srcAddr       Address
-	captured      Piece
-	expectCapture bool
-	check         bool
-	mate          bool
+	piece          Piece
+	dstAddr        Address
+	srcAddr        Address
+	captured       Piece
+	expectCapture  bool
+	check          bool
+	mate           bool
+	kingSideCastle bool
 }
 
 func parseMove(move string, g Game) (*MoveInfo, error) {
+	if move == "O-O" { // todo: 0-0 (zero instead of letter O) may be acceptable. confirm and test.
+		return &MoveInfo{kingSideCastle: true}, nil
+	}
+
 	mi, err := parseDst(move, g)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse dst from %q: %v", move, err)

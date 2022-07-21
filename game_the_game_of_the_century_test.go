@@ -31,8 +31,8 @@ var theGameOftheCenturyMoveExpectations = []moveExpectation{
 		move:      "d4",
 		wantBoard: "R BQKB RPP  PPPP  N  N    PP                 np ppppppbprnbqk  r",
 	},
-	// {
-	// 	move:      "O-O",
-	// 	wantBoard: "R BQKB RPP  PPPP  N  N    PP                 np ppppppbprnbq rk ",
-	// },
+	{
+		move:      "O-O",
+		wantBoard: "R BQKB RPP  PPPP  N  N    PP                 np ppppppbprnbq rk ",
+	},
 }

@@ -236,6 +236,7 @@ func TestGameCastle(t *testing.T) {
 		game := chessgo.Game{Board: board, Turn: chessgo.Black}
 
 		captured, err := game.Move("O-O")
+
 		assertNoError(t, err)
 		assertCaptured(t, captured, nil)
 		assertBoard(t, board.String(), wantBoard)
@@ -246,6 +247,7 @@ func TestGameCastle(t *testing.T) {
 	// t.Run("moved rook, can't castle")
 	// t.Run("moved king, can't castle")
 	// t.Run("can't castle through check")
+	// t.Run("can't castle through pieces")
 }
 
 func (b *MockBoard) InBounds(addr chessgo.Address) bool {
@@ -312,6 +314,14 @@ func (b *MockBoard) getIndex(addr chessgo.Address) uint8 {
 		x = 2
 	case 'd':
 		x = 3
+	case 'e':
+		x = 4
+	case 'f':
+		x = 5
+	case 'g':
+		x = 6
+	case 'h':
+		x = 7
 	}
 
 	switch rank {
@@ -323,6 +333,14 @@ func (b *MockBoard) getIndex(addr chessgo.Address) uint8 {
 		y = 2
 	case '4':
 		y = 3
+	case '5':
+		y = 4
+	case '6':
+		y = 5
+	case '7':
+		y = 6
+	case '8':
+		y = 7
 	}
 
 	idx := y*uint8(math.Sqrt(float64(len(b.squares)))) + x
