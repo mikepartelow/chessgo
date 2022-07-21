@@ -14,18 +14,25 @@ type PGNTag struct {
 	Value string
 }
 
+type parserState struct {
+	inComment bool
+	turn      Color
+	moveIdx   int
+}
+
 func ParsePGN(in io.Reader) ([]PGNTag, []string, error) {
 	var tags []PGNTag
 	var moves []string
 
 	scanner := bufio.NewScanner(in)
+	state := parserState{moveIdx: 1}
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		if tag := parseTag(line); tag != nil {
 			tags = append(tags, *tag)
 		} else {
-			newMoves, err := parseMoves(line)
+			newMoves, err := parseMoves(line, &state)
 			if err != nil {
 				return nil, nil, fmt.Errorf("problem parsing moves: %v", err)
 			}
@@ -64,7 +71,7 @@ func isBracketedWith(leftBracket, rightBracket, text string) bool {
 	return strings.HasPrefix(text, leftBracket) && strings.HasSuffix(text, rightBracket)
 }
 
-func parseMoves(line string) ([]string, error) {
+func parseMoves(line string, state *parserState) ([]string, error) {
 	// 1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 {This opening is called the Ruy Lopez.}
 	// 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Nb8 10. d4 Nbd7
 	// 11. c4 c6 12. cxb5 axb5 13. Nc3 Bb7 14. Bg5 b4 15. Nb1 h6 16. Bh4 c5 17. dxe5
@@ -79,23 +86,20 @@ func parseMoves(line string) ([]string, error) {
 	scanner := bufio.NewScanner(strings.NewReader(line))
 	scanner.Split(bufio.ScanWords)
 
-	inComment := false
-	turn := White
-	moveIdx := 1
-
 	for scanner.Scan() {
 		token := scanner.Text()
-		log.Printf(" token=%q, inComment=%v, strings.HasSuffix=%v", token, inComment, strings.HasSuffix(token, "}"))
-		if inComment {
-			inComment = !strings.HasSuffix(token, "}")
+		log.Printf(" token=%q, inComment=%v, strings.HasSuffix=%v", token, state.inComment, strings.HasSuffix(token, "}"))
+
+		if state.inComment {
+			state.inComment = !closingComment(token)
 			continue
 		}
 
-		if strings.HasPrefix(token, "{") {
-			if inComment {
+		if openingComment(token) {
+			if state.inComment {
 				return nil, fmt.Errorf("comments do not nest!")
 			}
-			inComment = true
+			state.inComment = true
 			continue
 		}
 
@@ -108,17 +112,25 @@ func parseMoves(line string) ([]string, error) {
 			// sanity check
 			num := token[0 : len(token)-1]
 			gotMoveIdx, err := strconv.Atoi(num)
-			if err != nil || moveIdx != gotMoveIdx {
-				return nil, fmt.Errorf("expected moveIdx %d, got %d from %q", moveIdx, gotMoveIdx, num)
+			if err != nil || state.moveIdx != gotMoveIdx {
+				return nil, fmt.Errorf("expected moveIdx %d, got %d from %q", state.moveIdx, gotMoveIdx, num)
 			}
 		} else {
 			moves = append(moves, token)
-			if turn == Black {
-				moveIdx++
+			if state.turn == Black {
+				state.moveIdx++
 			}
-			turn = turn.Opponent()
+			state.turn = state.turn.Opponent()
 		}
 
 	}
 	return moves, nil
+}
+
+func openingComment(token string) bool {
+	return strings.HasPrefix(token, "{") || strings.HasPrefix(token, "(")
+}
+
+func closingComment(token string) bool {
+	return strings.HasSuffix(token, "}") || strings.HasSuffix(token, ")")
 }

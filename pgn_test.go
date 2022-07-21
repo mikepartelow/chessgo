@@ -63,6 +63,7 @@ func TestPgn(t *testing.T) {
 			{"1. e4 e5 2. Nf3 Nc6", []string{"e4", "e5", "Nf3", "Nc6"}},
 			{"1. e4 e5 {This is a comment.} 2. Ba4 Nf6", []string{"e4", "e5", "Ba4", "Nf6"}},
 			{"1. e4 e5 2. Ba4 {This is a comment.} 2... Nf6", []string{"e4", "e5", "Ba4", "Nf6"}},
+			{"1. e4 e5 2. Ba4 (This is a comment.) 2... Nf6", []string{"e4", "e5", "Ba4", "Nf6"}},
 		}
 
 		for _, tC := range cases {
@@ -77,19 +78,30 @@ func TestPgn(t *testing.T) {
 		}
 	})
 
-	// t.Run("it parses the immortal game", func(t *testing.T) {
-	// 	wantTags := []chessgo.PGNTag{}
-	// 	wantMoves := []string{
-	// 		"e4", "e5", "f4", "exf4", "Bc4", "Qh4+", "Kf1", "b5", "Bxb5", "Nf6", "Nf3", "Qh6", "d3", "Nh5", "Nh4", "Qg5", "Nf5", "c6", "g4", "Nf6", "Rg1", "cxb5", "h4", "Qg6", "h5", "Qg5", "Qf3", "Ng8", "Bxf4", "Qf6", "Nc3", "Bc5", "Nd5", "Qxb2", "Bd6", "Bxg1", "e5", "Qxa1+", "Ke2", "Na6", "Nxg7+", "Kd8", "Qf6+", "Nxf6", "Be7#",
-	// 	}
+	t.Run("it parses the immortal game", func(t *testing.T) {
+		wantTags := []chessgo.PGNTag{
+			{"Event", "Adolf Anderssen - Lionel Kieseritzky, 1851 (The Immortal Game): Adolf Anderssen - Lionel Kieseritzky, 1851 (The Immortal Game)"},
+			{"Site", "https://lichess.org/study/agESaWbF/cScPsrC4"},
+			{"Result", "*"},
+			{"UTCDate", "2018.06.18"},
+			{"UTCTime", "11:52:03"},
+			{"Variant", "Standard"},
+			{"ECO", "C33"},
+			{"Opening", "King's Gambit Accepted: Bishop's Gambit, Bryan Countergambit"},
+			{"Annotator", "https://lichess.org/@/flohahn22"},
+		}
 
-	// 	f := mustOpen(t, "games/the_immortal_game.pgn")
-	// 	gotTags, gotMoves, err := chessgo.ParsePGN(f)
+		wantMoves := []string{
+			"e4", "e5", "f4", "exf4", "Bc4", "Qh4+", "Kf1", "b5", "Bxb5", "Nf6", "Nf3", "Qh6", "d3", "Nh5", "Nh4", "Qg5", "Nf5", "c6", "g4", "Nf6", "Rg1", "cxb5", "h4", "Qg6", "h5", "Qg5", "Qf3", "Ng8", "Bxf4", "Qf6", "Nc3", "Bc5", "Nd5", "Qxb2", "Bd6", "Bxg1", "e5", "Qxa1+", "Ke2", "Na6", "Nxg7+", "Kd8", "Qf6+", "Nxf6", "Be7#",
+		}
 
-	// 	assertNoError(t, err)
-	// 	assertTags(t, gotTags, wantTags)
-	// 	assertMoves(t, gotMoves, wantMoves)
-	// })
+		f := mustOpen(t, "games/the_immortal_game.pgn")
+		gotTags, gotMoves, err := chessgo.ParsePGN(f)
+
+		assertNoError(t, err)
+		assertTags(t, gotTags, wantTags)
+		assertMoves(t, gotMoves, wantMoves)
+	})
 
 	// t.Run("it parses tags plus movetext", func(t *testing.T) {
 
