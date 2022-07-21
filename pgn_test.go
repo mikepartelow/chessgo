@@ -2,6 +2,7 @@ package chessgo_test
 
 import (
 	"mp/chessgo"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -30,7 +31,7 @@ func TestPgn(t *testing.T) {
 			{"Event", "F/S Return Match"},
 		}
 		text := strings.NewReader(`[Event "F/S Return Match"]`)
-		got, _ := chessgo.ParsePGN(text)
+		got, _, _ := chessgo.ParsePGN(text)
 
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v, wanted %v", got, want)
@@ -47,27 +48,89 @@ func TestPgn(t *testing.T) {
 		text := strings.NewReader(`[Site "Belgrade, Serbia JUG"]
 [Date "1992.11.04"]
 [Round "29"]`)
-		got, _ := chessgo.ParsePGN(text)
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("got %v, wanted %v", got, want)
-		}
+		got, _, _ := chessgo.ParsePGN(text)
+		assertTags(t, got, want)
 
 	})
-	// t.Run("it parses movetext", func(t *testing.T) {
 
+	t.Run("it parses movetext", func(t *testing.T) {
+		cases := []struct {
+			pgn       string
+			wantMoves []string
+		}{
+			{"1. e4 e5", []string{"e4", "e5"}},
+			{"1. e4", []string{"e4"}},
+			{"1. e4 e5 2. Nf3 Nc6", []string{"e4", "e5", "Nf3", "Nc6"}},
+			{"1. e4 e5 {This is a comment.} 2. Ba4 Nf6", []string{"e4", "e5", "Ba4", "Nf6"}},
+			{"1. e4 e5 2. Ba4 {This is a comment.} 2... Nf6", []string{"e4", "e5", "Ba4", "Nf6"}},
+		}
+
+		for _, tC := range cases {
+			t.Run(tC.pgn, func(t *testing.T) {
+				text := strings.NewReader(tC.pgn)
+				_, got, err := chessgo.ParsePGN(text)
+
+				assertNoError(t, err)
+				assertMoves(t, got, tC.wantMoves)
+			})
+
+		}
+	})
+
+	// t.Run("it parses the immortal game", func(t *testing.T) {
+	// 	wantTags := []chessgo.PGNTag{}
+	// 	wantMoves := []string{
+	// 		"e4", "e5", "f4", "exf4", "Bc4", "Qh4+", "Kf1", "b5", "Bxb5", "Nf6", "Nf3", "Qh6", "d3", "Nh5", "Nh4", "Qg5", "Nf5", "c6", "g4", "Nf6", "Rg1", "cxb5", "h4", "Qg6", "h5", "Qg5", "Qf3", "Ng8", "Bxf4", "Qf6", "Nc3", "Bc5", "Nd5", "Qxb2", "Bd6", "Bxg1", "e5", "Qxa1+", "Ke2", "Na6", "Nxg7+", "Kd8", "Qf6+", "Nxf6", "Be7#",
+	// 	}
+
+	// 	f := mustOpen(t, "games/the_immortal_game.pgn")
+	// 	gotTags, gotMoves, err := chessgo.ParsePGN(f)
+
+	// 	assertNoError(t, err)
+	// 	assertTags(t, gotTags, wantTags)
+	// 	assertMoves(t, gotMoves, wantMoves)
 	// })
 
 	// t.Run("it parses tags plus movetext", func(t *testing.T) {
 
 	// })
 
-	t.Run("it returns an error on invalid input", func(t *testing.T) {
-		text := strings.NewReader("invalid")
-		_, err := chessgo.ParsePGN(text)
+	// t.Run("it returns an error on invalid input", func(t *testing.T) {
+	// 	text := strings.NewReader("invalid")
+	// 	_, _, err := chessgo.ParsePGN(text)
 
-		if err == nil {
-			t.Errorf("got nil, wanted error")
-		}
-	})
+	// 	if err == nil {
+	// 		t.Errorf("got nil, wanted error")
+	// 	}
+	// })
+}
+
+func mustOpen(t *testing.T, path string) *os.File {
+	t.Helper()
+	f, err := os.Open(path)
+	if err != nil {
+		t.Errorf("couldn't open %s: %v", path, err)
+	}
+	return f
+}
+
+func assertNoError(t *testing.T, got error) {
+	t.Helper()
+	if got != nil {
+		t.Errorf("expected no error, got %s", got)
+	}
+}
+
+func assertTags(t *testing.T, got, want []chessgo.PGNTag) {
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, wanted %v", got, want)
+	}
+}
+
+func assertMoves(t *testing.T, got, want []string) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, wanted %v", got, want)
+	}
 
 }
