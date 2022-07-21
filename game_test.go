@@ -4,190 +4,194 @@ import (
 	"fmt"
 	"math"
 	"mp/chessgo"
-	"reflect"
 	"strings"
 	"testing"
 )
 
-type StubBoard struct {
+type MockBoard struct {
 	squares []byte
 }
 
 func TestGameMove(t *testing.T) {
 	testCases := []struct {
-		board        StubBoard
+		board        MockBoard
 		turn         chessgo.Color
 		move         string
-		wantBoard    StubBoard
+		wantBoard    MockBoard
 		wantCaptured chessgo.Piece
 		wantErr      string
 	}{
 		{
-			board:     StubBoard{squares: []byte("P   ")},
+			board:     MockBoard{squares: []byte("P   ")},
 			move:      "a2",
-			wantBoard: StubBoard{squares: []byte("  P ")},
+			wantBoard: MockBoard{squares: []byte("  P ")},
 		},
 		{
-			board:     StubBoard{squares: []byte(" P  ")},
+			board:     MockBoard{squares: []byte(" P  ")},
 			move:      "b2",
-			wantBoard: StubBoard{squares: []byte("   P")},
+			wantBoard: MockBoard{squares: []byte("   P")},
 		},
 		{
-			board:     StubBoard{squares: []byte("B   ")},
+			board:     MockBoard{squares: []byte("B   ")},
 			move:      "Bb2",
-			wantBoard: StubBoard{squares: []byte("   B")},
+			wantBoard: MockBoard{squares: []byte("   B")},
 		},
 		{
-			board:     StubBoard{squares: []byte("b   ")},
+			board:     MockBoard{squares: []byte("b   ")},
 			turn:      chessgo.Black,
 			move:      "Bb2",
-			wantBoard: StubBoard{squares: []byte("   b")},
+			wantBoard: MockBoard{squares: []byte("   b")},
 		},
 		{
-			board:     StubBoard{squares: []byte("  p ")},
+			board:     MockBoard{squares: []byte("  p ")},
 			turn:      chessgo.Black,
 			move:      "a1",
-			wantBoard: StubBoard{squares: []byte("p   ")},
+			wantBoard: MockBoard{squares: []byte("p   ")},
 		},
 		{
-			board:        StubBoard{squares: []byte("b  N")},
+			board:        MockBoard{squares: []byte("b  N")},
 			turn:         chessgo.Black,
 			move:         "Bxb2",
-			wantBoard:    StubBoard{squares: []byte("   b")},
+			wantBoard:    MockBoard{squares: []byte("   b")},
 			wantCaptured: chessgo.WhiteKnight{},
 		},
 		{
-			board:     StubBoard{squares: []byte("b  n")},
+			board:     MockBoard{squares: []byte("b  n")},
 			turn:      chessgo.Black,
 			move:      "Bxb2",
-			wantBoard: StubBoard{squares: []byte("b  n")},
+			wantBoard: MockBoard{squares: []byte("b  n")},
 			wantErr:   "attempt to capture own piece",
 		},
 		{
-			board:     StubBoard{squares: []byte("    P           ")},
+			board:     MockBoard{squares: []byte("    P           ")},
 			move:      "a4",
-			wantBoard: StubBoard{squares: []byte("            P   ")},
+			wantBoard: MockBoard{squares: []byte("            P   ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("        p       ")},
+			board:     MockBoard{squares: []byte("        p       ")},
 			turn:      chessgo.Black,
 			move:      "a1",
-			wantBoard: StubBoard{squares: []byte("p               ")},
+			wantBoard: MockBoard{squares: []byte("p               ")},
 		},
 		{
-			board:        StubBoard{squares: []byte("P  q")},
+			board:        MockBoard{squares: []byte("P  q")},
 			move:         "axb2",
-			wantBoard:    StubBoard{squares: []byte("   P")},
+			wantBoard:    MockBoard{squares: []byte("   P")},
 			wantCaptured: chessgo.BlackQueen{},
 		},
 		{
-			board:        StubBoard{squares: []byte(" Pq ")},
+			board:        MockBoard{squares: []byte(" Pq ")},
 			move:         "bxa2",
-			wantBoard:    StubBoard{squares: []byte("  P ")},
+			wantBoard:    MockBoard{squares: []byte("  P ")},
 			wantCaptured: chessgo.BlackQueen{},
 		},
 		// todo: disambiguate the move (left diagonal capture) between two possible pawns
 		// todo: disambiguate the move (right diagonal capture) between two possible pawns
 		{
-			board:        StubBoard{squares: []byte("Q  p")},
+			board:        MockBoard{squares: []byte("Q  p")},
 			turn:         chessgo.Black,
 			move:         "bxa1",
-			wantBoard:    StubBoard{squares: []byte("p   ")},
+			wantBoard:    MockBoard{squares: []byte("p   ")},
 			wantCaptured: chessgo.WhiteQueen{},
 		},
 		{
-			board:        StubBoard{squares: []byte(" Qp ")},
+			board:        MockBoard{squares: []byte(" Qp ")},
 			turn:         chessgo.Black,
 			move:         "axb1",
-			wantBoard:    StubBoard{squares: []byte(" p  ")},
+			wantBoard:    MockBoard{squares: []byte(" p  ")},
 			wantCaptured: chessgo.WhiteQueen{},
 		},
 		// todo: disambiguate the move (left diagonal capture) between two possible pawns
 		// todo: disambiguate the move (right diagonal capture) between two possible pawns
 		{
-			board:     StubBoard{squares: []byte("B               ")},
+			board:     MockBoard{squares: []byte("B               ")},
 			move:      "Bd4",
-			wantBoard: StubBoard{squares: []byte("               B")},
+			wantBoard: MockBoard{squares: []byte("               B")},
 		},
 		{
-			board:     StubBoard{squares: []byte("               B")},
+			board:     MockBoard{squares: []byte("               B")},
 			move:      "Ba1",
-			wantBoard: StubBoard{squares: []byte("B               ")},
+			wantBoard: MockBoard{squares: []byte("B               ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("   B            ")},
+			board:     MockBoard{squares: []byte("   B            ")},
 			move:      "Ba4",
-			wantBoard: StubBoard{squares: []byte("            B   ")},
+			wantBoard: MockBoard{squares: []byte("            B   ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("            B   ")},
+			board:     MockBoard{squares: []byte("            B   ")},
 			move:      "Bd1",
-			wantBoard: StubBoard{squares: []byte("   B            ")},
+			wantBoard: MockBoard{squares: []byte("   B            ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("Q      k ")},
+			board:     MockBoard{squares: []byte("Q      k ")},
 			move:      "Qc3+",
-			wantBoard: StubBoard{squares: []byte("       kQ")},
+			wantBoard: MockBoard{squares: []byte("       kQ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("K   ")},
+			board:     MockBoard{squares: []byte("K   ")},
 			move:      "Kb1",
-			wantBoard: StubBoard{squares: []byte(" K  ")},
+			wantBoard: MockBoard{squares: []byte(" K  ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("   k")},
+			board:     MockBoard{squares: []byte("   k")},
 			turn:      chessgo.Black,
 			move:      "Kb1",
-			wantBoard: StubBoard{squares: []byte(" k  ")},
+			wantBoard: MockBoard{squares: []byte(" k  ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("K   ")},
+			board:     MockBoard{squares: []byte("K   ")},
 			move:      "Kb2",
-			wantBoard: StubBoard{squares: []byte("   K")},
+			wantBoard: MockBoard{squares: []byte("   K")},
 		},
 		{
-			board:     StubBoard{squares: []byte("N        ")},
+			board:     MockBoard{squares: []byte("N        ")},
 			move:      "Nb3",
-			wantBoard: StubBoard{squares: []byte("       N ")},
+			wantBoard: MockBoard{squares: []byte("       N ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("n        ")},
+			board:     MockBoard{squares: []byte("n        ")},
 			turn:      chessgo.Black,
 			move:      "Nc2",
-			wantBoard: StubBoard{squares: []byte("     n   ")},
+			wantBoard: MockBoard{squares: []byte("     n   ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("       N ")},
+			board:     MockBoard{squares: []byte("       N ")},
 			move:      "Na1",
-			wantBoard: StubBoard{squares: []byte("N        ")},
+			wantBoard: MockBoard{squares: []byte("N        ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("     n   ")},
+			board:     MockBoard{squares: []byte("     n   ")},
 			turn:      chessgo.Black,
 			move:      "Na1",
-			wantBoard: StubBoard{squares: []byte("n        ")},
+			wantBoard: MockBoard{squares: []byte("n        ")},
 		},
 
 		{
-			board:     StubBoard{squares: []byte("Q        ")},
+			board:     MockBoard{squares: []byte("Q        ")},
 			move:      "Qa3",
-			wantBoard: StubBoard{squares: []byte("      Q  ")},
+			wantBoard: MockBoard{squares: []byte("      Q  ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("   q     ")},
+			board:     MockBoard{squares: []byte("   q     ")},
 			turn:      chessgo.Black,
 			move:      "Qc2",
-			wantBoard: StubBoard{squares: []byte("     q   ")},
+			wantBoard: MockBoard{squares: []byte("     q   ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("R        ")},
+			board:     MockBoard{squares: []byte("R        ")},
 			move:      "Ra3",
-			wantBoard: StubBoard{squares: []byte("      R  ")},
+			wantBoard: MockBoard{squares: []byte("      R  ")},
 		},
 		{
-			board:     StubBoard{squares: []byte("RP R             ")},
+			board:     MockBoard{squares: []byte("RP R             ")},
 			move:      "Rc1",
-			wantBoard: StubBoard{squares: []byte("RPR              ")},
+			wantBoard: MockBoard{squares: []byte("RPR              ")},
+		},
+		{
+			board:     MockBoard{squares: []byte("RP R             ")},
+			move:      "Rc1",
+			wantBoard: MockBoard{squares: []byte("RPR              ")},
 		},
 	}
 
@@ -201,39 +205,50 @@ func TestGameMove(t *testing.T) {
 				t.Errorf("got err %T/%v wanted %v", err, err, tC.wantErr)
 			}
 
-			if !reflect.DeepEqual(g.Board, &tC.wantBoard) {
-				t.Errorf("got %q, wanted %q after move %q", g.Board, &tC.wantBoard, tC.move)
-			}
-
-			if captured != tC.wantCaptured {
-				t.Errorf("got %q captured, wanted %q", captured, tC.wantCaptured)
-			}
+			assertBoard(t, g.Board.String(), tC.wantBoard.String())
+			assertCaptured(t, captured, tC.wantCaptured)
 		})
 	}
 
 	t.Run("turn toggles on valid move", func(t *testing.T) {
-		g := chessgo.Game{Board: &StubBoard{squares: []byte("P   ")}}
+		g := chessgo.Game{Board: &MockBoard{squares: []byte("P   ")}}
 		if g.Turn != chessgo.White {
 			t.Errorf("expected Turn = White")
 		}
 		_, err := g.Move("a2")
 
-		if err != nil {
-			t.Errorf("expected nil err")
-		}
+		assertNoError(t, err)
 
 		if g.Turn != chessgo.Black {
 			t.Errorf("expected Turn = Black")
 		}
 	})
 
-	// t.Run("turn does not toggle on invalid move", func(t *testing.T) {
-
-	// })
+	// todo:
+	// t.Run("turn does not toggle on invalid move")
 
 }
 
-func (b *StubBoard) InBounds(addr chessgo.Address) bool {
+func TestGameCastle(t *testing.T) {
+	t.Run("king side", func(t *testing.T) {
+		board := &MockBoard{squares: []byte("R BQKB RPP  PPPP  N  N    PP                 np ppppppbprnbqk  r")}
+		wantBoard := "R BQKB RPP  PPPP  N  N    PP                 np ppppppbprnbq rk "
+		game := chessgo.Game{Board: board, Turn: chessgo.Black}
+
+		captured, err := game.Move("O-O")
+		assertNoError(t, err)
+		assertCaptured(t, captured, nil)
+		assertBoard(t, board.String(), wantBoard)
+	})
+
+	// todo:
+	// t.Run("queen side")
+	// t.Run("moved rook, can't castle")
+	// t.Run("moved king, can't castle")
+	// t.Run("can't castle through check")
+}
+
+func (b *MockBoard) InBounds(addr chessgo.Address) bool {
 	file := addr[0]
 	rank := addr[1]
 
@@ -241,11 +256,11 @@ func (b *StubBoard) InBounds(addr chessgo.Address) bool {
 	return r
 }
 
-func (b *StubBoard) GetSquare(addr chessgo.Address) chessgo.Piece {
+func (b *MockBoard) GetSquare(addr chessgo.Address) chessgo.Piece {
 	return chessgo.PieceFromByte(b.squares[b.getIndex(addr)])
 }
 
-func (b *StubBoard) SetSquare(addr chessgo.Address, piece chessgo.Piece) {
+func (b *MockBoard) SetSquare(addr chessgo.Address, piece chessgo.Piece) {
 	if piece != nil {
 		b.squares[b.getIndex(addr)] = piece.Byte()
 	} else {
@@ -253,36 +268,36 @@ func (b *StubBoard) SetSquare(addr chessgo.Address, piece chessgo.Piece) {
 	}
 }
 
-func (b *StubBoard) Move(srcAddr, dstAddr chessgo.Address) chessgo.Piece {
+func (b *MockBoard) Move(srcAddr, dstAddr chessgo.Address) chessgo.Piece {
 	captured := b.GetSquare(dstAddr)
 	b.SetSquare(dstAddr, b.GetSquare(srcAddr))
 	b.SetSquare(srcAddr, nil)
 	return captured
 }
 
-func (b *StubBoard) String() string {
+func (b *MockBoard) String() string {
 	return string(b.squares)
 }
 
-func (b *StubBoard) MaxFile() byte {
+func (b *MockBoard) MaxFile() byte {
 	m := byte(uint8('a')+uint8(math.Sqrt(float64(len(b.squares))))) - 1
 	return m
 }
 
-func (b *StubBoard) MaxRank() byte {
+func (b *MockBoard) MaxRank() byte {
 	m := byte(uint8('0') + uint8(math.Sqrt(float64(len(b.squares)))))
 	return m
 }
 
-func (b *StubBoard) InCheck(color chessgo.Color) bool {
+func (b *MockBoard) InCheck(color chessgo.Color) bool {
 	return false
 }
 
-func (b *StubBoard) Mated(color chessgo.Color) bool {
+func (b *MockBoard) Mated(color chessgo.Color) bool {
 	return false
 }
 
-func (b *StubBoard) getIndex(addr chessgo.Address) uint8 {
+func (b *MockBoard) getIndex(addr chessgo.Address) uint8 {
 	file := addr[0]
 	rank := addr[1]
 

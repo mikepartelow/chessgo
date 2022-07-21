@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -86,7 +85,7 @@ func (p *PGNParser) parseMoves(line string) error {
 
 	for scanner.Scan() {
 		token := scanner.Text()
-		log.Printf(" token=%q, inComment=%v, strings.HasSuffix=%v", token, p.inComment, strings.HasSuffix(token, "}"))
+		// log.Printf(" token=%q, inComment=%v, strings.HasSuffix=%v", token, p.inComment, strings.HasSuffix(token, "}"))
 
 		if p.inComment {
 			p.inComment = !closingComment(token)
